@@ -44,9 +44,64 @@ interface OtpAttempt {
 interface ServerActionBody {
   action?: string;
   token?: string;
-  otpToken?: string;
+  otpTokens?: unknown;
   whitelistItem?: { id?: string; name?: string };
   targetId?: string;
+}
+
+const OTP_SECRET_SLOTS = 3;
+
+function getConfiguredOtpSecrets(): [string, string, string] | null {
+  const secrets = [
+    process.env.ADMIN_OTP_SECRET?.trim() || "",
+    process.env.ADMIN_OTP_SECRET_2?.trim() || "",
+    process.env.ADMIN_OTP_SECRET_3?.trim() || "",
+  ];
+  if (secrets.some((s) => s.length === 0)) {
+    return null;
+  }
+  return secrets as [string, string, string];
+}
+
+function parseOtpTokens(rawTokens: unknown): [string, string, string] | null {
+  if (!Array.isArray(rawTokens) || rawTokens.length !== OTP_SECRET_SLOTS) {
+    return null;
+  }
+  const normalized = rawTokens.map((item) =>
+    typeof item === "string" ? item.trim() : "",
+  );
+  if (normalized.some((code) => !/^\d{6}$/.test(code))) {
+    return null;
+  }
+  return normalized as [string, string, string];
+}
+
+function verifyTripleOtp(
+  tokens: [string, string, string],
+  secrets: [string, string, string],
+  consumedStore: Map<string, number>,
+): { ok: boolean; reason?: "reused" | "invalid" } {
+  let hasReused = false;
+  let allValid = true;
+
+  for (let i = 0; i < OTP_SECRET_SLOTS; i += 1) {
+    const consumedKey = `${i + 1}:${tokens[i]}`;
+    if (consumedStore.has(consumedKey)) {
+      hasReused = true;
+    }
+    const verification = verifySync({ token: tokens[i], secret: secrets[i] });
+    if (!verification.valid) {
+      allValid = false;
+    }
+  }
+
+  if (!allValid) {
+    return { ok: false, reason: "invalid" };
+  }
+  if (hasReused) {
+    return { ok: false, reason: "reused" };
+  }
+  return { ok: true };
 }
 
 const g = globalThis as typeof globalThis & {
@@ -151,7 +206,7 @@ async function addLog(action: string, user: string) {
 }
 
 function handleLoginAction(
-  otpToken: string | undefined,
+  rawOtpTokens: unknown,
   clientIp: string,
   userAgent: string,
 ): Response {
@@ -172,38 +227,44 @@ function handleLoginAction(
     );
   }
 
-  if (!otpToken || typeof otpToken !== "string") {
+  const parsedTokens = parseOtpTokens(rawOtpTokens);
+  if (!parsedTokens) {
     recordOtpFailure(clientIp);
     return Response.json(
-      { message: "인증에 실패했습니다." },
+      { message: "3개의 6자리 OTP 코드를 모두 입력해 주세요." },
+      { status: 401, headers: getOtpRateLimitHeaders(clientIp) },
+    );
+  }
+
+  const secrets = getConfiguredOtpSecrets();
+  if (!secrets) {
+    recordOtpFailure(clientIp);
+    return Response.json(
+      { message: "서버 OTP 설정이 완료되지 않았습니다." },
       { status: 401, headers: getOtpRateLimitHeaders(clientIp) },
     );
   }
 
   const consumedStore = getOtpConsumedStore();
-  if (consumedStore.has(otpToken)) {
-    recordOtpFailure(clientIp);
-    return Response.json(
-      { message: "이미 사용된 OTP 코드입니다." },
-      { status: 401, headers: getOtpRateLimitHeaders(clientIp) },
-    );
-  }
+  const checkResult = verifyTripleOtp(parsedTokens, secrets, consumedStore);
 
-  const adminOtpSecret = process.env.ADMIN_OTP_SECRET;
-  const verification = adminOtpSecret
-    ? verifySync({ token: otpToken, secret: adminOtpSecret })
-    : { valid: false };
-
-  if (!verification.valid) {
+  if (!checkResult.ok) {
     recordOtpFailure(clientIp);
+    const errorMessage =
+      checkResult.reason === "reused"
+        ? "이미 사용된 OTP 코드가 포함되어 있습니다."
+        : "OTP 코드가 일치하지 않습니다.";
     return Response.json(
-      { message: "OTP 코드가 일치하지 않습니다." },
+      { message: errorMessage },
       { status: 401, headers: getOtpRateLimitHeaders(clientIp) },
     );
   }
 
   resetOtpAttempts(clientIp);
-  consumedStore.set(otpToken, Date.now() + 5 * 60 * 1000);
+  const consumeUntil = Date.now() + 5 * 60 * 1000;
+  for (let i = 0; i < OTP_SECRET_SLOTS; i += 1) {
+    consumedStore.set(`${i + 1}:${parsedTokens[i]}`, consumeUntil);
+  }
   const newToken = generateToken();
   getSessionStore().set(newToken, {
     type: "admin",
@@ -359,7 +420,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const userAgent = request.headers.get("user-agent") || "unknown-agent";
 
     if (action === "login") {
-      return handleLoginAction(body.otpToken, clientIp, userAgent);
+      return handleLoginAction(body.otpTokens, clientIp, userAgent);
     }
     if (action === "logout") {
       return await handleLogoutAction(body.token, clientIp, userAgent);

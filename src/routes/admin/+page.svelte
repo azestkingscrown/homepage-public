@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from "#lib/components/Icon.svelte";
+  import TripleOtpForm from "#lib/components/TripleOtpForm.svelte";
 
   interface ServerLog {
     action: string;
@@ -13,7 +14,7 @@
     name: string;
   }
 
-  let otpToken = $state("");
+  let otpTokens = $state<[string, string, string]>(["", "", ""]);
   let token = $state("");
   let logs = $state<ServerLog[]>([]);
   let whitelist = $state<WhitelistItem[]>([]);
@@ -26,13 +27,13 @@
   let editingName = $state("");
 
   async function handleLogin() {
-    if (!otpToken) return;
+    if (otpTokens.some((code) => code.length !== 6)) return;
     loginLoading = true;
     try {
       const res = await fetch("/api/server", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "login", otpToken }),
+        body: JSON.stringify({ action: "login", otpTokens }),
       });
       const data = await res.json();
       if (!res.ok || !data.token) {
@@ -52,6 +53,7 @@
       await fetchLogs(data.token);
       await fetchWhitelist(data.token);
       isAuthenticated = true;
+      otpTokens = ["", "", ""];
     } catch {
       alert("데이터를 가져오는데 실패했습니다.");
     } finally {
@@ -192,7 +194,7 @@
     }
     token = "";
     isAuthenticated = false;
-    otpToken = "";
+    otpTokens = ["", "", ""];
     logs = [];
     whitelist = [];
   }
@@ -257,51 +259,15 @@
   </div>
 
   {#if !isAuthenticated}
-    <div class="flex justify-center pt-4">
-      <div class="w-full max-w-md space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A]">
-        <div class="flex items-center gap-3">
-          <div class="flex size-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400">
-            <Icon name="lock" class="size-5" />
-          </div>
-          <div>
-            <h2 class="text-base font-semibold text-gray-900 dark:text-gray-50">
-              Google OTP 인증
-            </h2>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              대시보드 접근을 위해 6자리 인증코드를 입력하세요.
-            </p>
-          </div>
-        </div>
-
-        <form
-          onsubmit={(e) => {
-            e.preventDefault();
-            void handleLogin();
-          }}
-          class="space-y-3"
-        >
-          <input
-            type="text"
-            inputmode="numeric"
-            maxlength="6"
-            placeholder="000000"
-            value={otpToken}
-            oninput={(e) => {
-              otpToken = e.currentTarget.value.replaceAll(/\D/g, "");
-            }}
-            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center font-mono text-lg tracking-[0.3em] text-gray-900 shadow-xs outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-indigo-700 dark:focus:ring-indigo-700/30"
-          />
-          <button
-            type="submit"
-            disabled={loginLoading || !otpToken}
-            class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-          >
-            <Icon name="shield" class="size-4" />
-            {loginLoading ? "인증 중..." : "인증 확인"}
-          </button>
-        </form>
-      </div>
-    </div>
+    <TripleOtpForm
+      title="Google OTP 3단계 인증"
+      subtitle="대시보드 접근을 위해 3개의 6자리 인증코드를 모두 입력하세요."
+      submitLabel="인증 확인"
+      loadingLabel="인증 중..."
+      loading={loginLoading}
+      bind:tokens={otpTokens}
+      onSubmit={handleLogin}
+    />
   {:else}
     <div class="space-y-6">
       <!-- KPI Strip -->
