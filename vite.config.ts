@@ -21,18 +21,12 @@ export default defineConfig({
         mode: "nonce",
         directives: {
           "default-src": ["none"],
-          "script-src": ["self"],
-          "style-src": [
-            "self",
-            "unsafe-inline",
-            "https://fonts.googleapis.com",
+          "script-src": ["strict-dynamic", "self"],
+          "style-src": ["self", "https://fonts.googleapis.com"],
+          "style-src-attr": [
+            "unsafe-hashes",
+            "sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo=",
           ],
-          "style-src-elem": [
-            "self",
-            "unsafe-inline",
-            "https://fonts.googleapis.com",
-          ],
-          "style-src-attr": ["unsafe-inline"],
           "font-src": ["self", "https://fonts.gstatic.com"],
           "img-src": [
             "self",

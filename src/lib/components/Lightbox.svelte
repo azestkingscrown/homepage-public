@@ -11,7 +11,7 @@
   function closeLightbox() {
     isOpen = false;
     if (typeof document !== "undefined") {
-      document.body.style.overflow = "";
+      document.body.classList.remove("overflow-hidden");
     }
   }
 
@@ -32,7 +32,7 @@
         src = img.src;
         alt = img.alt || img.getAttribute("data-caption") || "";
         isOpen = true;
-        document.body.style.overflow = "hidden";
+        document.body.classList.add("overflow-hidden");
       }
     };
 
@@ -43,6 +43,7 @@
     document.addEventListener("click", handleClick);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
+      document.body.classList.remove("overflow-hidden");
       document.removeEventListener("click", handleClick);
       document.removeEventListener("keydown", handleKeyDown);
     };

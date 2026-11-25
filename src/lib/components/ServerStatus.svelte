@@ -33,24 +33,24 @@
     if (neutral) {
       return {
         track: "bg-oc-hover",
-        fill: "bg-oc-muted",
+        fill: "fill-oc-muted",
       };
     }
     if (pct >= 90) {
       return {
         track: "bg-red-500/15",
-        fill: "bg-[#db2424] dark:bg-[#ed5a5a]",
+        fill: "fill-[#db2424] dark:fill-[#ed5a5a]",
       };
     }
     if (pct >= 75) {
       return {
         track: "bg-amber-500/15",
-        fill: "bg-[#eb980a] dark:bg-[#f4b434]",
+        fill: "fill-[#eb980a] dark:fill-[#f4b434]",
       };
     }
     return {
       track: "bg-oc-hover",
-      fill: "bg-oc-strong",
+      fill: "fill-oc-strong",
     };
   }
 
@@ -190,10 +190,9 @@
                   <div class="flex items-center gap-2 font-mono text-[11px]">
                     <span class="w-4 shrink-0 text-right text-oc-faint">{core.id}</span>
                     <div class="relative flex h-1.5 flex-1 overflow-hidden rounded-xs {c.track}">
-                      <div
-                        class="h-full rounded-xs transition-all duration-300 ease-out {c.fill}"
-                        style="width: {pct}%"
-                      ></div>
+                      <svg viewBox="0 0 100 6" preserveAspectRatio="none" class="block h-full w-full" aria-hidden="true">
+                        <rect x="0" y="0" width={pct} height="6" class="transition-all duration-300 ease-out {c.fill}" />
+                      </svg>
                     </div>
                     <span class="w-9 shrink-0 text-right tabular-nums text-oc-text">
                       {core.usage}%
@@ -215,10 +214,9 @@
                   </span>
                 </div>
                 <div class="relative flex h-1.5 w-full overflow-hidden rounded-xs {memColor.track}">
-                  <div
-                    class="h-full rounded-xs transition-all duration-300 ease-out {memColor.fill}"
-                    style="width: {memPct}%"
-                  ></div>
+                  <svg viewBox="0 0 100 6" preserveAspectRatio="none" class="block h-full w-full" aria-hidden="true">
+                    <rect x="0" y="0" width={memPct} height="6" class="transition-all duration-300 ease-out {memColor.fill}" />
+                  </svg>
                 </div>
                 <p class="mt-1.5 font-mono text-[11px] tabular-nums text-oc-muted">
                   {server.memory.usedGB}G / {server.memory.totalGB}G
@@ -240,10 +238,9 @@
                   </span>
                 </div>
                 <div class="relative flex h-1.5 w-full overflow-hidden rounded-xs {secColor.track}">
-                  <div
-                    class="h-full rounded-xs transition-all duration-300 ease-out {secColor.fill}"
-                    style="width: {secPct}%"
-                  ></div>
+                  <svg viewBox="0 0 100 6" preserveAspectRatio="none" class="block h-full w-full" aria-hidden="true">
+                    <rect x="0" y="0" width={secPct} height="6" class="transition-all duration-300 ease-out {secColor.fill}" />
+                  </svg>
                 </div>
                 <p class="mt-1.5 font-mono text-[11px] tabular-nums text-oc-muted">
                   {secondary.data.usedGB}G / {secondary.data.totalGB}G

@@ -187,7 +187,9 @@
       {#if uploading}
         <div class="flex w-full items-center gap-2 sm:w-56">
           <div class="h-1.5 flex-1 overflow-hidden rounded-xs bg-oc-hover">
-            <div class="h-full rounded-xs bg-oc-strong transition-all" style="width: {uploadProgress}%"></div>
+            <svg viewBox="0 0 100 6" preserveAspectRatio="none" class="block h-full w-full" aria-hidden="true">
+              <rect x="0" y="0" width={uploadProgress} height="6" class="fill-oc-strong transition-all" />
+            </svg>
           </div>
           <span class="font-mono text-xs font-semibold text-oc-strong">{uploadProgress}%</span>
         </div>

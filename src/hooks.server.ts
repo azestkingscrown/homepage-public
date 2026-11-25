@@ -174,7 +174,7 @@ function applySecurityHeaders(response: Response, pathname: string): Response {
   } else if (!headers.has("Content-Security-Policy") && isHtml) {
     headers.set(
       "Content-Security-Policy",
-      "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+      "default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
     );
   }
 
@@ -239,8 +239,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   const locale = event.locals.locale;
   const response = await resolve(event, {
-    transformPageChunk: ({ html }) =>
-      html.replace('<html lang="ko">', `<html lang="${locale}">`),
+    transformPageChunk: ({ html }) => {
+      let out = html.replace('<html lang="ko">', `<html lang="${locale}">`);
+      const nonceMatch = out.match(/<script nonce="([^"]+)">/);
+      if (nonceMatch) {
+        out = out.replaceAll(
+          'rel="modulepreload">',
+          `rel="modulepreload" nonce="${nonceMatch[1]}">`,
+        );
+      }
+      return out;
+    },
   });
   return applySecurityHeaders(response, pathname);
 };

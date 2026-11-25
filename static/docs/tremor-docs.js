@@ -137,12 +137,12 @@
 
     function openDrawer() {
       overlay.classList.add("open");
-      document.body.style.overflow = "hidden";
+      document.body.classList.add("no-scroll");
     }
 
     function closeDrawer() {
       overlay.classList.remove("open");
-      document.body.style.overflow = "";
+      document.body.classList.remove("no-scroll");
     }
 
     if (openBtn) openBtn.addEventListener("click", openDrawer);
@@ -168,12 +168,12 @@
       viewerImg.src = src;
       if (caption) caption.textContent = alt || "";
       viewer.classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.body.classList.add("no-scroll");
     }
 
     function closeViewer() {
       viewer.classList.remove("active");
-      document.body.style.overflow = "";
+      document.body.classList.remove("no-scroll");
     }
 
     document.querySelectorAll(".doc-img").forEach(function (img) {

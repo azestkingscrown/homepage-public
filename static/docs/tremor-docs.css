@@ -538,6 +538,14 @@ code {
   margin-top: 1rem;
 }
 
+.btn-row-flush {
+  margin-top: 0;
+}
+
+body.no-scroll {
+  overflow: hidden;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
