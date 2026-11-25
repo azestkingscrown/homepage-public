@@ -4,9 +4,14 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { extractClientIp, validateSession } from "#lib/server/session.ts";
+import {
+  extractClientIp,
+  safePeerIp,
+  validateSession,
+} from "#lib/server/session.ts";
 
 const MAX_FILE_SIZE = 95 * 1024 * 1024; // 95MB (Cloudflare Tunnel 100MB 제한 대응)
+const MAX_CONTENT_LENGTH = MAX_FILE_SIZE + 5 * 1024 * 1024;
 
 const FORBIDDEN_EXTENSIONS = new Set([
   ".exe", ".bat", ".cmd", ".sh", ".bin", ".msi", ".vbs", ".ps1",
@@ -14,7 +19,10 @@ const FORBIDDEN_EXTENSIONS = new Set([
   ".pl", ".py", ".jsp", ".asp", ".aspx", ".cgi",
   ".html", ".htm", ".js", ".mjs", ".cjs", ".ts", ".tsx",
   ".svg", ".svgz", ".xml", ".xhtml", ".wasm", ".swf", ".jar", ".dll",
+  ".mhtml", ".mht", ".shtml", ".hta", ".scr", ".lnk", ".reg", ".com", ".pif",
 ]);
+
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
 
 function trimUnderscores(value: string): string {
   let start = 0;
@@ -24,14 +32,58 @@ function trimUnderscores(value: string): string {
   return value.slice(start, end);
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+function matchesImageMagicBytes(ext: string, head: Uint8Array): boolean {
+  if (ext === ".png") {
+    const pngSig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    return head.byteLength >= 8 && pngSig.every((b, idx) => head[idx] === b);
+  }
+  if (ext === ".jpg" || ext === ".jpeg") {
+    return (
+      head.byteLength >= 3 &&
+      head[0] === 0xff &&
+      head[1] === 0xd8 &&
+      head[2] === 0xff
+    );
+  }
+  if (ext === ".gif") {
+    if (head.byteLength < 6) return false;
+    const header = String.fromCharCode(...head.slice(0, 6));
+    return header === "GIF87a" || header === "GIF89a";
+  }
+  if (ext === ".webp") {
+    if (head.byteLength < 12) return false;
+    const riff = String.fromCharCode(...head.slice(0, 4));
+    const webp = String.fromCharCode(...head.slice(8, 12));
+    return riff === "RIFF" && webp === "WEBP";
+  }
+  return true;
+}
+
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   try {
     const token = request.headers.get("x-session-token");
-    const clientIp = extractClientIp(request.headers);
+    const clientIp = extractClientIp(
+      request.headers,
+      safePeerIp(getClientAddress),
+    );
     const userAgent = request.headers.get("user-agent") || "unknown-agent";
 
     if (!validateSession(token, "admin", clientIp, userAgent)) {
       return Response.json({ error: "인증이 필요합니다." }, { status: 401 });
+    }
+
+    const declaredLength = Number.parseInt(
+      request.headers.get("content-length") || "",
+      10,
+    );
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_CONTENT_LENGTH) {
+      return Response.json(
+        {
+          error:
+            "Cloudflare Tunnel 전송 제한(100MB)으로 인해 파일 크기는 95MB를 초과할 수 없습니다.",
+        },
+        { status: 413 },
+      );
     }
 
     const formData = await request.formData();
@@ -81,6 +133,16 @@ export const POST: RequestHandler = async ({ request }) => {
         { error: "보안상 업로드가 금지된 파일 형식입니다." },
         { status: 400 },
       );
+    }
+
+    if (IMAGE_EXTENSIONS.has(finalExt)) {
+      const headBytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+      if (!matchesImageMagicBytes(finalExt, headBytes)) {
+        return Response.json(
+          { error: "이미지 파일의 실제 시그니처가 확장자와 일치하지 않습니다." },
+          { status: 400 },
+        );
+      }
     }
 
     const fileName = `${Date.now()}-${safeName}`;

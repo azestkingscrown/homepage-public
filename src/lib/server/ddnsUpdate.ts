@@ -2,7 +2,7 @@ import {
   type AuthVerification,
   getClientIp,
   getManagedDomains,
-  isValidIp,
+  isPublicIpv4,
   resolveTargetDomain,
   syncCloudflareDdns,
   verifyDdnsRequest,
@@ -40,6 +40,7 @@ export async function handleDdnsUpdate(
   req: Request,
   url: URL,
   forceDyndns = false,
+  peerAddress?: string,
 ): Promise<Response> {
   const isDyndnsFormat =
     forceDyndns ||
@@ -79,15 +80,23 @@ export async function handleDdnsUpdate(
   }
 
   let targetIp = url.searchParams.get("ip") || url.searchParams.get("myip");
-  if (!targetIp || !isValidIp(targetIp)) {
-    targetIp = getClientIp(req);
+  if (!targetIp || !isPublicIpv4(targetIp)) {
+    if (targetIp && targetIp.trim()) {
+      return respondError(
+        isDyndnsFormat,
+        "dnserr",
+        "유효한 공인 IPv4 주소만 등록할 수 있습니다.",
+        400,
+      );
+    }
+    targetIp = getClientIp(req, peerAddress);
   }
 
-  if (!isValidIp(targetIp)) {
+  if (!isPublicIpv4(targetIp)) {
     return respondError(
       isDyndnsFormat,
       "dnserr",
-      "유효한 공인 IP 주소를 감지하거나 파싱할 수 없습니다.",
+      "유효한 공인 IPv4 주소를 감지하거나 파싱할 수 없습니다.",
       400,
     );
   }

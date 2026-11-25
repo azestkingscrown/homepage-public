@@ -19,6 +19,7 @@ import {
   updateManagedDomainOs,
   verifyDdnsRequest,
 } from "#lib/server/ddns.ts";
+import { safePeerIp } from "#lib/server/session.ts";
 
 interface AuthResult {
   authenticated: boolean;
@@ -181,8 +182,8 @@ function handleAdminViewGet(auth: AuthResult, clientIp: string): Response {
   );
 }
 
-export const GET: RequestHandler = async ({ request, url, locals }) => {
-  const clientIp = getClientIp(request);
+export const GET: RequestHandler = async ({ request, url, locals, getClientAddress }) => {
+  const clientIp = getClientIp(request, safePeerIp(getClientAddress));
   const auth = verifyAuth(request, url, locals.session);
 
   if (!auth.authenticated || !auth.user) {
@@ -339,8 +340,8 @@ async function handleCreateDomainAction(
   });
 }
 
-export const POST: RequestHandler = async ({ request, url, locals }) => {
-  const clientIp = getClientIp(request);
+export const POST: RequestHandler = async ({ request, url, locals, getClientAddress }) => {
+  const clientIp = getClientIp(request, safePeerIp(getClientAddress));
   const auth = verifyAuth(request, url, locals.session);
 
   if (!auth.authenticated || !auth.user) {
@@ -375,13 +376,11 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
 
     return await handleCreateDomainAction(auth, body, clientIp);
   } catch (err: unknown) {
+    console.error("[DDNS] POST 요청 처리 오류:", err);
     return Response.json(
       {
         success: false,
-        message:
-          err instanceof Error
-            ? err.message
-            : "요청 처리 중 오류가 발생했습니다.",
+        message: "요청 처리 중 오류가 발생했습니다.",
       },
       { status: 500, headers: NO_STORE },
     );
@@ -418,13 +417,11 @@ export const DELETE: RequestHandler = async ({ request, url, locals }) => {
       headers: NO_STORE,
     });
   } catch (err: unknown) {
+    console.error("[DDNS] 기기 삭제 오류:", err);
     return Response.json(
       {
         success: false,
-        message:
-          err instanceof Error
-            ? err.message
-            : "기기 삭제 중 오류가 발생했습니다.",
+        message: "기기 삭제 중 오류가 발생했습니다.",
       },
       { status: 500, headers: NO_STORE },
     );

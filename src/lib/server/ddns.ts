@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { timingSafeEqualStr } from './session';
+import { extractClientIp, timingSafeEqualStr } from './session';
 
 const ROOT_DOMAIN = (process.env.DDNS_ROOT_DOMAIN || 'example.com')
   .trim()
@@ -287,24 +287,42 @@ export function isValidIp(ip: string): boolean {
   return net.isIP(ip.trim()) !== 0;
 }
 
-/**
- * HTTP 요청 헤더에서 클라이언트의 실제 공인 IP를 추출합니다.
- */
-export function getClientIp(req: Request): string {
-  const headers = req.headers;
-  const cfIp = headers.get('cf-connecting-ip');
-  if (cfIp && isValidIp(cfIp)) return cfIp.trim();
-
-  const realIp = headers.get('x-real-ip');
-  if (realIp && isValidIp(realIp)) return realIp.trim();
-
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(',')[0].trim();
-    if (isValidIp(firstIp)) return firstIp;
+function ipv4ToInt(ip: string): number | null {
+  if (!net.isIPv4(ip)) return null;
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) {
+    return null;
   }
+  return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+}
 
-  return '127.0.0.1';
+export function isPublicIpv4(ip: string): boolean {
+  if (!ip || typeof ip !== 'string') return false;
+  const num = ipv4ToInt(ip.trim());
+  if (num === null) return false;
+
+  const b0 = (num >>> 24) & 0xff;
+  const b1 = (num >>> 16) & 0xff;
+  const b2 = (num >>> 8) & 0xff;
+
+  if (b0 === 0 || b0 === 10 || b0 === 127 || b0 >= 224) return false;
+  if (b0 === 100 && b1 >= 64 && b1 <= 127) return false;
+  if (b0 === 169 && b1 === 254) return false;
+  if (b0 === 172 && b1 >= 16 && b1 <= 31) return false;
+  if (b0 === 192 && b1 === 0 && (b2 === 0 || b2 === 2)) return false;
+  if (b0 === 192 && b1 === 168) return false;
+  if (b0 === 198 && (b1 === 18 || b1 === 19)) return false;
+  if (b0 === 198 && b1 === 51 && b2 === 100) return false;
+  if (b0 === 203 && b1 === 0 && b2 === 113) return false;
+  return true;
+}
+
+/**
+ * HTTP 요청 헤더와 피어 주소를 기반으로 클라이언트 IP를 추출합니다.
+ */
+export function getClientIp(req: Request, peerAddress?: string): string {
+  const resolved = extractClientIp(req.headers, peerAddress);
+  return isValidIp(resolved) ? resolved : '127.0.0.1';
 }
 
 /**
@@ -654,6 +672,17 @@ export async function syncCloudflareDdns(newIp: string, targetDomain?: string): 
     };
   }
 
+  if (!isPublicIpv4(newIp)) {
+    return {
+      success: false,
+      changed: false,
+      ip: newIp,
+      domain,
+      message: '유효한 공인 IPv4 주소만 DDNS에 등록할 수 있습니다.',
+      statusCode: 400,
+    };
+  }
+
   try {
     // 1. 기존 DNS A 레코드 목록 조회
     const searchUrl = `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records?type=A&name=${encodeURIComponent(domain)}`;
@@ -669,7 +698,8 @@ export async function syncCloudflareDdns(newIp: string, targetDomain?: string): 
 
     if (!searchRes.ok) {
       const errBody = await searchRes.text();
-      const errMsg = `Cloudflare DNS 레코드 조회 실패 (HTTP ${searchRes.status}): ${errBody}`;
+      console.error(`[DDNS] Cloudflare DNS 레코드 조회 실패 (HTTP ${searchRes.status}):`, errBody);
+      const errMsg = `Cloudflare DNS 레코드 조회 실패 (HTTP ${searchRes.status})`;
       saveDdnsState(domain, {
         lastChecked: now,
         status: 'error',
@@ -749,7 +779,8 @@ export async function syncCloudflareDdns(newIp: string, targetDomain?: string): 
 
     if (!updateRes.ok) {
       const errText = await updateRes.text();
-      const errMsg = `Cloudflare DNS 레코드 갱신 실패 (HTTP ${updateRes.status}): ${errText}`;
+      console.error(`[DDNS] Cloudflare DNS 레코드 갱신 실패 (HTTP ${updateRes.status}):`, errText);
+      const errMsg = `Cloudflare DNS 레코드 갱신 실패 (HTTP ${updateRes.status})`;
       saveDdnsState(domain, {
         lastChecked: now,
         status: 'error',
@@ -782,8 +813,9 @@ export async function syncCloudflareDdns(newIp: string, targetDomain?: string): 
       domain,
       message: `성공적으로 ${domain}의 DNS A 레코드가 ${newIp}로 갱신되었습니다.`,
     };
-  } catch (err: any) {
-    const errMsg = `Cloudflare 통신 예외 발생: ${err?.message || String(err)}`;
+  } catch (err: unknown) {
+    console.error('[DDNS] Cloudflare 통신 예외 발생:', err);
+    const errMsg = 'Cloudflare 통신 중 오류가 발생했습니다.';
     saveDdnsState(domain, {
       lastChecked: now,
       status: 'error',
@@ -854,7 +886,8 @@ async function upsertCloudflareARecord(
     signal: AbortSignal.timeout(8000),
   });
   if (!searchRes.ok) {
-    return { ok: false, message: `Cloudflare DNS 조회 실패: ${await searchRes.text()}` };
+    console.error(`[DDNS] Cloudflare DNS 조회 실패 (HTTP ${searchRes.status}):`, await searchRes.text());
+    return { ok: false, message: `Cloudflare DNS 조회 실패 (HTTP ${searchRes.status})` };
   }
 
   const searchData = await searchRes.json();
@@ -883,7 +916,8 @@ async function upsertCloudflareARecord(
       },
     );
     if (!patchRes.ok) {
-      return { ok: false, message: `Cloudflare DNS 레코드 갱신 실패: ${await patchRes.text()}` };
+      console.error(`[DDNS] Cloudflare DNS 레코드 갱신 실패 (HTTP ${patchRes.status}):`, await patchRes.text());
+      return { ok: false, message: `Cloudflare DNS 레코드 갱신 실패 (HTTP ${patchRes.status})` };
     }
     return { ok: true };
   }
@@ -905,7 +939,8 @@ async function upsertCloudflareARecord(
     },
   );
   if (!createRes.ok) {
-    return { ok: false, message: `Cloudflare DNS 레코드 생성 실패: ${await createRes.text()}` };
+    console.error(`[DDNS] Cloudflare DNS 레코드 생성 실패 (HTTP ${createRes.status}):`, await createRes.text());
+    return { ok: false, message: `Cloudflare DNS 레코드 생성 실패 (HTTP ${createRes.status})` };
   }
   return { ok: true };
 }
@@ -938,7 +973,7 @@ export async function addManagedDomain(
 
   const cleanLabel = (label || prefix).trim().slice(0, 30);
   const fallbackIp = process.env.DDNS_DEFAULT_IP || '192.0.2.1';
-  const targetIp = initialIp && isValidIp(initialIp) ? initialIp : fallbackIp;
+  const targetIp = initialIp && isPublicIpv4(initialIp) ? initialIp : fallbackIp;
   const resolvedOs: 'windows' | 'linux' =
     os || (cleanLabel.toLowerCase().includes('win') ? 'windows' : 'linux');
 
@@ -979,9 +1014,10 @@ export async function addManagedDomain(
       domain,
     };
   } catch (err: unknown) {
+    console.error('[DDNS] 도메인 등록 중 오류:', err);
     return {
       success: false,
-      message: `등록 중 오류 발생: ${err instanceof Error ? err.message : String(err)}`,
+      message: '도메인 등록 중 오류가 발생했습니다.',
     };
   }
 }

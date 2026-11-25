@@ -1,7 +1,11 @@
 import type { Handle } from "@sveltejs/kit/hooks";
 import { detectLocale, LOCALE_COOKIE } from "#lib/i18n.ts";
 import { getDiscordSession } from "#lib/server/auth.ts";
-import { extractClientIp, timingSafeEqualStr } from "#lib/server/session.ts";
+import {
+  extractClientIp,
+  safePeerIp,
+  timingSafeEqualStr,
+} from "#lib/server/session.ts";
 
 const EXTRA_TRUSTED_ORIGINS = (process.env.TRUSTED_ORIGINS || "")
   .split(",")
@@ -30,16 +34,35 @@ function isFormLikeContentType(contentType: string): boolean {
   );
 }
 
+interface RateLimitRule {
+  prefix: string;
+  max: number;
+  windowMs: number;
+}
+
+const MAX_RATE_LIMIT_ENTRIES = 10_000;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
-  "/api/server": { max: 20, windowMs: 60_000 },
-  "/api/upload": { max: 10, windowMs: 60_000 },
-  "/api/delete": { max: 10, windowMs: 60_000 },
-  "/api/images": { max: 30, windowMs: 60_000 },
-  "/api/proxy-image": { max: 120, windowMs: 60_000 },
-  "/api/status": { max: 600, windowMs: 60_000 },
-};
+const RATE_LIMIT_RULES: RateLimitRule[] = [
+  { prefix: "/api/server-status", max: 120, windowMs: 60_000 },
+  { prefix: "/api/discord-status", max: 120, windowMs: 60_000 },
+  { prefix: "/api/tokscale-status", max: 120, windowMs: 60_000 },
+  { prefix: "/api/proxy-image", max: 120, windowMs: 60_000 },
+  { prefix: "/api/status", max: 600, windowMs: 60_000 },
+  { prefix: "/api/server", max: 20, windowMs: 60_000 },
+  { prefix: "/api/upload", max: 10, windowMs: 60_000 },
+  { prefix: "/api/delete", max: 10, windowMs: 60_000 },
+  { prefix: "/api/images", max: 30, windowMs: 60_000 },
+  { prefix: "/api/ddns/update", max: 30, windowMs: 60_000 },
+  { prefix: "/api/ddns/myip", max: 60, windowMs: 60_000 },
+  { prefix: "/api/ddns", max: 40, windowMs: 60_000 },
+  { prefix: "/nic/update", max: 30, windowMs: 60_000 },
+  { prefix: "/api/auth/signin", max: 20, windowMs: 60_000 },
+  { prefix: "/api/auth/callback", max: 20, windowMs: 60_000 },
+  { prefix: "/api/auth/signout", max: 20, windowMs: 60_000 },
+  { prefix: "/api/discord", max: 60, windowMs: 60_000 },
+  { prefix: "/uploads", max: 180, windowMs: 60_000 },
+];
 
 setInterval(() => {
   const now = Date.now();
@@ -50,27 +73,39 @@ setInterval(() => {
   }
 }, 300_000).unref();
 
+function evictRateLimitIfNeeded(now: number): void {
+  if (rateLimitMap.size < MAX_RATE_LIMIT_ENTRIES) return;
+  for (const [k, v] of rateLimitMap.entries()) {
+    if (v.resetAt < now) rateLimitMap.delete(k);
+  }
+  while (rateLimitMap.size >= MAX_RATE_LIMIT_ENTRIES) {
+    const oldestKey = rateLimitMap.keys().next().value;
+    if (oldestKey === undefined) break;
+    rateLimitMap.delete(oldestKey);
+  }
+}
+
 function checkRateLimit(ip: string, pathname: string): {
   allowed: boolean;
   limit: number;
 } {
-  const limitConfig = Object.entries(RATE_LIMITS).find(([p]) =>
-    pathname.startsWith(p),
+  const rule = RATE_LIMIT_RULES.find(
+    (r) => pathname === r.prefix || pathname.startsWith(`${r.prefix}/`),
   );
-  if (!limitConfig) return { allowed: true, limit: 60 };
+  if (!rule) return { allowed: true, limit: 60 };
 
-  const { max, windowMs } = limitConfig[1];
-  const key = `${ip}:${pathname}`;
+  const key = `${ip}:${rule.prefix}`;
   const now = Date.now();
 
   const entry = rateLimitMap.get(key);
   if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, limit: max };
+    if (!entry) evictRateLimitIfNeeded(now);
+    rateLimitMap.set(key, { count: 1, resetAt: now + rule.windowMs });
+    return { allowed: true, limit: rule.max };
   }
 
   entry.count += 1;
-  return { allowed: entry.count <= max, limit: max };
+  return { allowed: entry.count <= rule.max, limit: rule.max };
 }
 
 function isHiddenDotPath(pathname: string): boolean {
@@ -177,7 +212,9 @@ function applySecurityHeaders(response: Response, pathname: string): Response {
   const isHtml = (headers.get("content-type") || "").includes("text/html");
 
   if (pathname.startsWith("/uploads/")) {
-    headers.set("Content-Disposition", "inline");
+    if (!headers.has("Content-Disposition")) {
+      headers.set("Content-Disposition", "attachment");
+    }
     headers.set(
       "Content-Security-Policy",
       "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'",
@@ -223,8 +260,18 @@ export const handle: Handle = async ({ event, resolve }) => {
   const csrfError = checkCsrfViolation(event.request, event.url);
   if (csrfError) return csrfError;
 
-  if (pathname.startsWith("/api/") && !isMonitorAgentRequest(event.request.headers)) {
-    const ip = extractClientIp(event.request.headers);
+  const isRateLimitedPath =
+    pathname.startsWith("/api/") ||
+    pathname === "/nic/update" ||
+    pathname.startsWith("/uploads/");
+  const bypassRateLimit =
+    pathname === "/api/status" && isMonitorAgentRequest(event.request.headers);
+
+  if (isRateLimitedPath && !bypassRateLimit) {
+    const ip = extractClientIp(
+      event.request.headers,
+      safePeerIp(event.getClientAddress),
+    );
     const { allowed, limit } = checkRateLimit(ip, pathname);
     if (!allowed) {
       return Response.json(

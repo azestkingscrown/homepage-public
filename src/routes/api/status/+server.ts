@@ -406,8 +406,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
     return Response.json({ success: true });
   } catch (error: unknown) {
+    console.error("Error processing status push:", error);
     return Response.json(
-      { error: error instanceof Error ? error.message : "Internal Server Error" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }

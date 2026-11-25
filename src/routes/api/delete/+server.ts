@@ -1,13 +1,19 @@
 import type { RequestHandler } from "./$types";
-import fs from "node:fs";
-import { unlink } from "node:fs/promises";
+import { lstat, realpath, unlink } from "node:fs/promises";
 import path from "node:path";
-import { extractClientIp, validateSession } from "#lib/server/session.ts";
+import {
+  extractClientIp,
+  safePeerIp,
+  validateSession,
+} from "#lib/server/session.ts";
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   try {
     const token = request.headers.get("x-session-token");
-    const clientIp = extractClientIp(request.headers);
+    const clientIp = extractClientIp(
+      request.headers,
+      safePeerIp(getClientAddress),
+    );
     const userAgent = request.headers.get("user-agent") || "unknown-agent";
 
     if (!validateSession(token, "admin", clientIp, userAgent)) {
@@ -37,11 +43,20 @@ export const POST: RequestHandler = async ({ request }) => {
       return Response.json({ error: "잘못된 파일 경로입니다." }, { status: 400 });
     }
 
-    if (!fs.existsSync(filePath)) {
+    const stat = await lstat(filePath).catch(() => null);
+    if (!stat || !stat.isFile() || stat.isSymbolicLink()) {
       return Response.json({ error: "파일을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    await unlink(filePath);
+    const [realUploadsDir, realFilePath] = await Promise.all([
+      realpath(uploadsDir),
+      realpath(filePath),
+    ]);
+    if (!realFilePath.startsWith(realUploadsDir + path.sep)) {
+      return Response.json({ error: "잘못된 파일 경로입니다." }, { status: 400 });
+    }
+
+    await unlink(realFilePath);
     console.log(`[Delete] File removed: ${path.basename(filename)}`);
 
     return Response.json({ success: true });

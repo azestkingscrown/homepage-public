@@ -17,6 +17,7 @@ import {
   generateToken,
   getOtpConsumedStore,
   getSessionStore,
+  safePeerIp,
   SESSION_TTL,
   validateSession,
 } from "#lib/server/session.ts";
@@ -36,8 +37,12 @@ const ALLOWED_ACTIONS = new Set([
   "updateWhitelist",
 ]);
 
+const OTP_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+const MAX_OTP_ATTEMPTS = 5_000;
+
 interface OtpAttempt {
   count: number;
+  lastAttemptAt: number;
   lockoutUntil: number;
 }
 
@@ -108,13 +113,20 @@ const g = globalThis as typeof globalThis & {
   __otpAttemptStore?: Map<string, OtpAttempt>;
 };
 
+function isAttemptExpired(attempt: OtpAttempt, now: number): boolean {
+  if (attempt.lockoutUntil > 0) {
+    return attempt.lockoutUntil <= now;
+  }
+  return now - attempt.lastAttemptAt >= OTP_ATTEMPT_WINDOW_MS;
+}
+
 function getOtpAttemptStore(): Map<string, OtpAttempt> {
   if (!g.__otpAttemptStore) {
     g.__otpAttemptStore = new Map<string, OtpAttempt>();
     setInterval(() => {
       const now = Date.now();
       for (const [ip, attempt] of g.__otpAttemptStore!.entries()) {
-        if (attempt.lockoutUntil > 0 && attempt.lockoutUntil < now) {
+        if (isAttemptExpired(attempt, now)) {
           g.__otpAttemptStore!.delete(ip);
         }
       }
@@ -138,14 +150,28 @@ function checkOtpRateLimit(clientIp: string): {
   return { allowed: true };
 }
 
+function evictOtpAttemptsIfNeeded(store: Map<string, OtpAttempt>, now: number) {
+  if (store.size < MAX_OTP_ATTEMPTS) return;
+  for (const [k, v] of store.entries()) {
+    if (isAttemptExpired(v, now)) store.delete(k);
+  }
+  while (store.size >= MAX_OTP_ATTEMPTS) {
+    const oldestKey = store.keys().next().value;
+    if (oldestKey === undefined) break;
+    store.delete(oldestKey);
+  }
+}
+
 function recordOtpFailure(clientIp: string) {
   const store = getOtpAttemptStore();
   const now = Date.now();
   let attempt = store.get(clientIp);
-  if (!attempt || (attempt.lockoutUntil > 0 && attempt.lockoutUntil <= now)) {
-    attempt = { count: 1, lockoutUntil: 0 };
+  if (!attempt || isAttemptExpired(attempt, now)) {
+    if (!attempt) evictOtpAttemptsIfNeeded(store, now);
+    attempt = { count: 1, lastAttemptAt: now, lockoutUntil: 0 };
   } else {
     attempt.count += 1;
+    attempt.lastAttemptAt = now;
   }
   if (attempt.count >= 5) {
     attempt.lockoutUntil = now + 5 * 60 * 1000;
@@ -166,7 +192,7 @@ function getOtpRateLimitHeaders(clientIp: string): Record<string, string> {
   let count = 0;
   if (isLocked) {
     count = 5;
-  } else if (attempt) {
+  } else if (attempt && !isAttemptExpired(attempt, now)) {
     count = attempt.count;
   }
 
@@ -371,7 +397,7 @@ async function handleDockerAction(
   }
 
   const userName = session.user.name || "Discord User";
-  await execFilePromise("docker", [action, CONTAINER_NAME]);
+  await execFilePromise("docker", [action, CONTAINER_NAME], { timeout: 15_000 });
   if (action === "start") {
     await addLog("서버 켜기", userName);
     return Response.json({
@@ -384,22 +410,30 @@ async function handleDockerAction(
 
 export const GET: RequestHandler = async () => {
   try {
-    const { stdout } = await execFilePromise("docker", [
-      "inspect",
-      "-f",
-      "{{.State.Status}} {{.State.Health.Status}}",
-      CONTAINER_NAME,
-    ]);
+    const { stdout } = await execFilePromise(
+      "docker",
+      [
+        "inspect",
+        "-f",
+        "{{.State.Status}} {{.State.Health.Status}}",
+        CONTAINER_NAME,
+      ],
+      { timeout: 5_000 },
+    );
     const [status, health] = stdout.trim().split(" ");
     return Response.json({ status, health });
   } catch {
     try {
-      const { stdout } = await execFilePromise("docker", [
-        "inspect",
-        "-f",
-        "{{.State.Status}}",
-        CONTAINER_NAME,
-      ]);
+      const { stdout } = await execFilePromise(
+        "docker",
+        [
+          "inspect",
+          "-f",
+          "{{.State.Status}}",
+          CONTAINER_NAME,
+        ],
+        { timeout: 5_000 },
+      );
       return Response.json({ status: stdout.trim(), health: "none" });
     } catch {
       return Response.json({ status: "offline", health: "none" });
@@ -407,7 +441,7 @@ export const GET: RequestHandler = async () => {
   }
 };
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request, locals, getClientAddress }) => {
   try {
     const body = (await request.json()) as ServerActionBody;
     const { action } = body;
@@ -416,7 +450,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       return Response.json({ message: "Invalid action" }, { status: 400 });
     }
 
-    const clientIp = extractClientIp(request.headers);
+    const clientIp = extractClientIp(
+      request.headers,
+      safePeerIp(getClientAddress),
+    );
     const userAgent = request.headers.get("user-agent") || "unknown-agent";
 
     if (action === "login") {

@@ -32,7 +32,7 @@ export const GET: RequestHandler = async () => {
     return Response.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Internal Server Error",
+        error: "Discord status lookup failed",
       },
       { status: 500 },
     );

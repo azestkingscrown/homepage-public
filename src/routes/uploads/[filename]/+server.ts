@@ -1,6 +1,16 @@
 import type { RequestHandler } from "./$types";
 import fs from "node:fs";
+import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
+
+const SAFE_IMAGE_CONTENT_TYPES: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+};
 
 export const GET: RequestHandler = async ({ params }) => {
   const filename = params.filename;
@@ -21,33 +31,38 @@ export const GET: RequestHandler = async ({ params }) => {
     return new Response("Forbidden", { status: 403 });
   }
 
+  const ext = path.extname(filename).toLowerCase();
+  if (ext === ".svg" || ext === ".svgz") {
+    return new Response("Forbidden Extension", { status: 403 });
+  }
+
   try {
-    if (!fs.existsSync(filePath)) {
+    const stat = await lstat(filePath).catch(() => null);
+    if (!stat || !stat.isFile() || stat.isSymbolicLink()) {
       return new Response("File Not Found", { status: 404 });
     }
 
-    const ext = path.extname(filename).toLowerCase();
-    if (ext === ".svg" || ext === ".svgz") {
-      return new Response("Forbidden Extension", { status: 403 });
+    const [realUploadsDir, realFilePath] = await Promise.all([
+      realpath(uploadsDir),
+      realpath(filePath),
+    ]);
+    if (!realFilePath.startsWith(realUploadsDir + path.sep)) {
+      return new Response("Forbidden", { status: 403 });
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
-    const contentTypes: Record<string, string> = {
-      ".png": "image/png",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".gif": "image/gif",
-      ".webp": "image/webp",
-    };
+    const imageMime = SAFE_IMAGE_CONTENT_TYPES[ext];
+    const contentType = imageMime || "application/octet-stream";
+    const disposition = imageMime ? "inline" : "attachment";
+    const nodeStream = fs.createReadStream(realFilePath);
+    const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
-    const contentType = contentTypes[ext] || "application/octet-stream";
-
-    return new Response(fileBuffer, {
+    return new Response(webStream, {
       headers: {
         "Content-Type": contentType,
+        "Content-Length": String(stat.size),
         "Cache-Control": "public, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
-        "Content-Disposition": "inline",
+        "Content-Disposition": disposition,
         "Content-Security-Policy":
           "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'",
       },

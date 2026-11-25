@@ -1,13 +1,20 @@
 import type { RequestHandler } from "./$types";
 import fs from "node:fs";
 import path from "node:path";
-import { extractClientIp, validateSession } from "#lib/server/session.ts";
+import {
+  extractClientIp,
+  safePeerIp,
+  validateSession,
+} from "#lib/server/session.ts";
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
 
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ request, getClientAddress }) => {
   const token = request.headers.get("x-session-token");
-  const clientIp = extractClientIp(request.headers);
+  const clientIp = extractClientIp(
+    request.headers,
+    safePeerIp(getClientAddress),
+  );
   const userAgent = request.headers.get("user-agent") || "unknown-agent";
 
   if (!validateSession(token, "admin", clientIp, userAgent)) {

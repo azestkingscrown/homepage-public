@@ -5,6 +5,7 @@
  */
 
 import crypto from 'node:crypto';
+import net from 'node:net';
 
 export interface SessionEntry {
   type: 'server' | 'admin';
@@ -68,14 +69,45 @@ export function timingSafeEqualStr(
 
 export const SESSION_TTL = 30 * 60 * 1000; // 30분
 
-export function extractClientIp(headers: Headers): string {
-  const cfIp = headers.get('cf-connecting-ip')?.trim();
+export function normalizePeerIp(raw?: string | null): string | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  return trimmed.startsWith('::ffff:') ? trimmed.slice(7) : trimmed;
+}
+
+export function isLoopbackIp(ip?: string | null): boolean {
+  const normalized = normalizePeerIp(ip);
+  return normalized === '127.0.0.1' || normalized === '::1';
+}
+
+export function safePeerIp(getClientAddress?: () => string): string | undefined {
+  if (typeof getClientAddress !== 'function') return undefined;
+  try {
+    return normalizePeerIp(getClientAddress());
+  } catch {
+    return undefined;
+  }
+}
+
+function cleanValidIp(raw?: string | null): string | undefined {
+  const normalized = normalizePeerIp(raw);
+  return normalized && net.isIP(normalized) !== 0 ? normalized : undefined;
+}
+
+export function extractClientIp(headers: Headers, peerAddress?: string): string {
+  const normalizedPeer = cleanValidIp(peerAddress);
+  if (normalizedPeer && !isLoopbackIp(normalizedPeer)) {
+    return normalizedPeer;
+  }
+
+  const cfIp = cleanValidIp(headers.get('cf-connecting-ip'));
   if (cfIp) return cfIp;
-  const realIp = headers.get('x-real-ip')?.trim();
+  const realIp = cleanValidIp(headers.get('x-real-ip'));
   if (realIp) return realIp;
-  const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const forwarded = cleanValidIp(headers.get('x-forwarded-for')?.split(',')[0]);
   if (forwarded) return forwarded;
-  return 'unknown-ip';
+  return normalizedPeer || 'unknown-ip';
 }
 
 export function generateToken(): string {
