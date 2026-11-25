@@ -130,27 +130,27 @@ function escapeXml(unsafe: string): string {
 function buildThemeCss(themeParam: string): string {
   if (themeParam === "light") {
     return `
-  .card-bg { fill: #ffffff; stroke: #e5e7eb; }
-  .text-title { fill: #111827; }
-  .text-sub { fill: #6b7280; }
+  .card-bg { fill: #ffffff; stroke: #e0e0e0; }
+  .text-title { fill: #161616; }
+  .text-sub { fill: #6b6b6b; }
   .status-border { stroke: #ffffff; }`;
   }
   if (themeParam === "dark") {
     return `
-  .card-bg { fill: #090e1a; stroke: #1f2937; }
-  .text-title { fill: #f9fafb; }
-  .text-sub { fill: #9ca3af; }
-  .status-border { stroke: #090e1a; }`;
+  .card-bg { fill: #161616; stroke: #2e2e2e; }
+  .text-title { fill: #fafafa; }
+  .text-sub { fill: #aeaeae; }
+  .status-border { stroke: #161616; }`;
   }
   return `
-  .card-bg { fill: #090e1a; stroke: #1f2937; }
-  .text-title { fill: #f9fafb; }
-  .text-sub { fill: #9ca3af; }
-  .status-border { stroke: #090e1a; }
+  .card-bg { fill: #161616; stroke: #2e2e2e; }
+  .text-title { fill: #fafafa; }
+  .text-sub { fill: #aeaeae; }
+  .status-border { stroke: #161616; }
   @media (prefers-color-scheme: light) {
-    .card-bg { fill: #ffffff; stroke: #e5e7eb; }
-    .text-title { fill: #111827; }
-    .text-sub { fill: #6b7280; }
+    .card-bg { fill: #ffffff; stroke: #e0e0e0; }
+    .text-title { fill: #161616; }
+    .text-sub { fill: #6b6b6b; }
     .status-border { stroke: #ffffff; }
   }`;
 }
@@ -172,7 +172,7 @@ export const GET: RequestHandler = async ({ url }) => {
   );
   const avatarElement = globalDiscordCache.avatarBase64
     ? `<image href="${globalDiscordCache.avatarBase64}" x="24" y="22" width="52" height="52" clip-path="url(#avatar-clip)" />`
-    : `<circle cx="50" cy="48" r="26" fill="#333333" />`;
+    : `<circle cx="50" cy="48" r="26" fill="#242424" />`;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="96" viewBox="0 0 360 96" fill="none">
 <defs>
@@ -183,7 +183,7 @@ export const GET: RequestHandler = async ({ url }) => {
 <style>
   ${buildThemeCss(themeParam)}
 </style>
-<rect class="card-bg" x="0.5" y="0.5" width="359" height="95" rx="16" stroke-width="1" />
+<rect class="card-bg" x="0.5" y="0.5" width="359" height="95" rx="8" stroke-width="1" />
 ${avatarElement}
 <circle class="status-border" cx="69" cy="67" r="7.5" fill="${statusColor}" stroke-width="3" />
 <text class="text-title" x="92" y="43" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" letter-spacing="-0.2px">
