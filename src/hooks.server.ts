@@ -162,6 +162,17 @@ function applySecurityHeaders(response: Response, pathname: string): Response {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=(), payment=()",
   );
+  headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  headers.set("Cross-Origin-Embedder-Policy", "credentialless");
+  const isPublicEmbed =
+    pathname.startsWith("/uploads/") ||
+    pathname.startsWith("/api/discord-status") ||
+    pathname.startsWith("/api/server-status") ||
+    pathname.startsWith("/api/tokscale-status");
+  headers.set(
+    "Cross-Origin-Resource-Policy",
+    isPublicEmbed ? "cross-origin" : "same-origin",
+  );
 
   const isHtml = (headers.get("content-type") || "").includes("text/html");
 
@@ -182,7 +193,10 @@ function applySecurityHeaders(response: Response, pathname: string): Response {
     ensureHtmlVary(headers);
   }
 
-  if (pathname.startsWith("/api/discord-status")) {
+  if (
+    pathname.startsWith("/api/discord-status") ||
+    pathname.startsWith("/api/tokscale-status")
+  ) {
     headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
   }
 
