@@ -58,10 +58,10 @@
       href={`https://tokscale.ai/u/${GITHUB_USERNAME}`}
       target="_blank"
       rel="noopener noreferrer"
-      class="flex w-full justify-center rounded border border-oc-border bg-[#0c0c0c] p-3 transition hover:border-oc-border-strong"
+      class="flex w-full justify-center rounded border border-oc-border bg-[#161616] p-3 transition hover:border-oc-border-strong"
     >
       <img
-        src={proxyUrl(`https://tokscale.ai/api/embed/${GITHUB_USERNAME}/svg?rank=percent&tokens=full&cost=full`)}
+        src="/api/tokscale-status?theme=dark&hide_border=true"
         alt={`Tokscale Stats for @${GITHUB_USERNAME}`}
         class="no-lightbox max-w-full rounded-xs"
         referrerpolicy="no-referrer"
