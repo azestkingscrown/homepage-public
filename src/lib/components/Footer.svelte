@@ -1,9 +1,11 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { localeStore } from "#lib/locale.svelte.ts";
   import { EXTERNAL_LINKS } from "#lib/siteLinks.ts";
   import Icon from "./Icon.svelte";
 
   let hideFooter = $derived((page.url.pathname || "").startsWith("/admin"));
+  let t = $derived(localeStore.t.footer);
 </script>
 
 {#if !hideFooter}
@@ -25,7 +27,7 @@
           class="inline-flex items-center gap-1.5 rounded-md bg-[#FEE500] px-3.5 py-2 text-xs font-bold text-gray-950 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <Icon name="heart" class="size-3.5 shrink-0" />
-          Support (Korean)
+          {t.supportKr}
         </a>
         <a
           href={EXTERNAL_LINKS.kofi}
@@ -34,7 +36,7 @@
           class="inline-flex items-center gap-1.5 rounded-md bg-[#FF5E5B] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <Icon name="cup" class="size-3.5 shrink-0" />
-          Support (Global)
+          {t.supportGlobal}
         </a>
       </div>
     </div>

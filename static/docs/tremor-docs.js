@@ -22,14 +22,42 @@
       light: "Light",
       system: "Auto",
     };
+    var isKo = document.documentElement.lang === "ko";
+    var label = labelMap[theme] || "Auto";
+    var titlePrefix = isKo ? "테마 전환 (현재: " : "Toggle theme (current: ";
     var buttons = document.querySelectorAll("[data-theme-toggle]");
     buttons.forEach(function (btn) {
-      btn.textContent = labelMap[theme] || "Auto";
-      btn.setAttribute(
-        "title",
-        "테마 전환 (현재: " + (labelMap[theme] || "Auto") + ")",
-      );
+      btn.textContent = label;
+      btn.setAttribute("title", titlePrefix + label + ")");
     });
+  }
+
+  function getSharedCookieDomain(hostname) {
+    var baseHost = hostname.replace(/^(?:www|chzzk)\./i, "");
+    if (
+      !baseHost ||
+      baseHost === "localhost" ||
+      /^\d+\.\d+\.\d+\.\d+$/.test(baseHost) ||
+      !baseHost.includes(".")
+    ) {
+      return "";
+    }
+    return "; Domain=." + baseHost;
+  }
+
+  function switchLanguage() {
+    var current = document.documentElement.lang === "ko" ? "ko" : "en";
+    var next = current === "ko" ? "en" : "ko";
+    var domain = getSharedCookieDomain(window.location.hostname);
+    var secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie =
+      "azest_lang=" + next + "; Path=/; Max-Age=31536000; SameSite=Lax" + domain + secure;
+    try {
+      localStorage.setItem("lang", next);
+    } catch {
+      // storage access blocked
+    }
+    window.location.reload();
   }
 
   function getNextTheme(current) {
@@ -178,6 +206,10 @@
 
     document.querySelectorAll("[data-theme-toggle]").forEach(function (btn) {
       btn.addEventListener("click", cycleTheme);
+    });
+
+    document.querySelectorAll("[data-lang-toggle]").forEach(function (btn) {
+      btn.addEventListener("click", switchLanguage);
     });
   });
 })();

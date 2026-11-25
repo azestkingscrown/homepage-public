@@ -18,6 +18,7 @@ Tremor Dashboard 스타일의 UI로 서버 상태 모니터링, Discord 실시�
 - **File Hosting (`/hosting`)**: TOTP 관리자 인증 기반 파일 업로드(최대 95MB)·삭제·서빙(`/uploads/[filename]`, 엄격 CSP 적용).
 - **Admin 대시보드 (`/admin`)**: TOTP 인증, 화이트리스트 관리, 제어 로그 조회.
 - **Subdomain Routing**: `chzzk.` 서브도메인 리라우팅(`src/hooks.ts`) 및 정적 가이드 문서(`static/docs/`).
+- **Bilingual i18n (KO / EN)**: `Accept-Language` 및 `User-Agent` 기반 한국어/영어 자동 SSR 감지, 쿠키(`azest_lang`) 기반 수동 언어 전환 토글(일반 페이지·공용 컴포넌트·정적 가이드 문서 지원, 관리자·DDNS 페이지 제외).
 
 ## Getting Started
 

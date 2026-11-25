@@ -1,4 +1,5 @@
 import type { Handle } from "@sveltejs/kit/hooks";
+import { detectLocale, LOCALE_COOKIE } from "#lib/i18n.ts";
 import { getDiscordSession } from "#lib/server/auth.ts";
 import { extractClientIp, timingSafeEqualStr } from "#lib/server/session.ts";
 
@@ -133,6 +134,23 @@ function isMonitorAgentRequest(headers: Headers): boolean {
   );
 }
 
+function ensureHtmlVary(headers: Headers): void {
+  const existing = headers.get("Vary");
+  if (!existing) {
+    headers.set("Vary", "Accept-Language, Cookie");
+    return;
+  }
+  const parts = new Set(
+    existing
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  parts.add("Accept-Language");
+  parts.add("Cookie");
+  headers.set("Vary", [...parts].join(", "));
+}
+
 function applySecurityHeaders(response: Response, pathname: string): Response {
   const headers = new Headers(response.headers);
   headers.set("X-XSS-Protection", "1; mode=block");
@@ -145,20 +163,23 @@ function applySecurityHeaders(response: Response, pathname: string): Response {
     "camera=(), microphone=(), geolocation=(), payment=()",
   );
 
+  const isHtml = (headers.get("content-type") || "").includes("text/html");
+
   if (pathname.startsWith("/uploads/")) {
     headers.set("Content-Disposition", "inline");
     headers.set(
       "Content-Security-Policy",
       "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'",
     );
-  } else if (
-    !headers.has("Content-Security-Policy") &&
-    (headers.get("content-type") || "").includes("text/html")
-  ) {
+  } else if (!headers.has("Content-Security-Policy") && isHtml) {
     headers.set(
       "Content-Security-Policy",
       "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
     );
+  }
+
+  if (isHtml) {
+    ensureHtmlVary(headers);
   }
 
   if (pathname.startsWith("/api/discord-status")) {
@@ -210,7 +231,16 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.request.headers.get("host") ||
     event.url.host ||
     "example.com";
+  event.locals.locale = detectLocale(
+    event.cookies.get(LOCALE_COOKIE),
+    event.request.headers.get("accept-language"),
+    event.request.headers.get("user-agent"),
+  );
 
-  const response = await resolve(event);
+  const locale = event.locals.locale;
+  const response = await resolve(event, {
+    transformPageChunk: ({ html }) =>
+      html.replace('<html lang="ko">', `<html lang="${locale}">`),
+  });
   return applySecurityHeaders(response, pathname);
 };

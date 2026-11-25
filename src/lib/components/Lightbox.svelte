@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { localeStore } from "#lib/locale.svelte.ts";
   import Icon from "./Icon.svelte";
 
   let isOpen = $state(false);
   let src = $state("");
   let alt = $state("");
+  let t = $derived(localeStore.t.site);
 
   function closeLightbox() {
     isOpen = false;
@@ -54,13 +56,13 @@
   >
     <button
       type="button"
-      aria-label="배경 클릭 시 닫기"
+      aria-label={t.backdropClose}
       onclick={closeLightbox}
       class="absolute inset-0 cursor-zoom-out bg-transparent"
     ></button>
     <button
       type="button"
-      aria-label="닫기"
+      aria-label={t.close}
       onclick={closeLightbox}
       class="absolute right-5 top-5 z-20 flex size-10 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
     >

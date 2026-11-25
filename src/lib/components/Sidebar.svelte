@@ -3,6 +3,7 @@
   import { invalidateAll } from "$app/navigation";
   import { onMount } from "svelte";
   import Icon, { type IconName } from "./Icon.svelte";
+  import { localeStore } from "#lib/locale.svelte.ts";
   import { CORE_NAV_PATHS, EXTERNAL_LINKS, SITE_META } from "#lib/siteLinks.ts";
   import { themeStore } from "#lib/theme.svelte.ts";
 
@@ -16,24 +17,41 @@
 
   let { session }: { session: SessionProp | null } = $props();
 
-  const coreNavigation: { name: string; href: string; icon: IconName; isStaticDoc?: boolean }[] = [
-    { name: "Overview", href: CORE_NAV_PATHS.home, icon: "home" },
-    { name: "치지직 봇 가이드", href: CORE_NAV_PATHS.chzzkGuide, icon: "book", isStaticDoc: true },
-    { name: "업데이트 내역", href: CORE_NAV_PATHS.chzzkUpdate, icon: "branch" },
-    { name: "기술 문서", href: CORE_NAV_PATHS.technicalInfo, icon: "shield", isStaticDoc: true },
-  ];
+  let t = $derived(localeStore.t);
 
-  const serviceNavigation: { name: string; href: string; icon: IconName; tag: string }[] = [
-    { name: "DDNS 관리", href: CORE_NAV_PATHS.ddns, icon: "globe", tag: "Auth" },
-    { name: "Minecraft 제어", href: CORE_NAV_PATHS.minecraft, icon: "gamepad", tag: "Auth" },
-    { name: "File Hosting", href: CORE_NAV_PATHS.hosting, icon: "upload", tag: "OTP" },
-    { name: "Admin 대시보드", href: CORE_NAV_PATHS.admin, icon: "admin", tag: "OTP" },
-  ];
+  let coreNavigation = $derived<
+    { name: string; href: string; icon: IconName; isStaticDoc?: boolean }[]
+  >([
+    { name: t.nav.overview, href: CORE_NAV_PATHS.home, icon: "home" },
+    { name: t.nav.chzzkGuide, href: CORE_NAV_PATHS.chzzkGuide, icon: "book", isStaticDoc: true },
+    { name: t.nav.chzzkUpdate, href: CORE_NAV_PATHS.chzzkUpdate, icon: "branch" },
+    { name: t.nav.technicalInfo, href: CORE_NAV_PATHS.technicalInfo, icon: "shield", isStaticDoc: true },
+  ]);
 
-  const shortcuts: { name: string; href: string; icon: IconName }[] = [
-    { name: "GitHub", href: EXTERNAL_LINKS.github, icon: "github" },
-    { name: "익명 문의 서버", href: EXTERNAL_LINKS.discordContact, icon: "discord" },
-    { name: "혀엉..", href: EXTERNAL_LINKS.boySite, icon: "external" },
+  let serviceNavigation = $derived<
+    { name: string; href: string; icon: IconName; tag: string }[]
+  >([
+    { name: t.nav.ddns, href: CORE_NAV_PATHS.ddns, icon: "globe", tag: "Auth" },
+    { name: t.nav.minecraft, href: CORE_NAV_PATHS.minecraft, icon: "gamepad", tag: "Auth" },
+    { name: t.nav.hosting, href: CORE_NAV_PATHS.hosting, icon: "upload", tag: "OTP" },
+    { name: t.nav.admin, href: CORE_NAV_PATHS.admin, icon: "admin", tag: "OTP" },
+  ]);
+
+  let shortcuts = $derived<{ name: string; href: string; icon: IconName }[]>([
+    { name: t.nav.github, href: EXTERNAL_LINKS.github, icon: "github" },
+    { name: t.nav.contactServer, href: EXTERNAL_LINKS.discordContact, icon: "discord" },
+    { name: t.nav.boySite, href: EXTERNAL_LINKS.boySite, icon: "external" },
+  ]);
+
+  let themeOptions = $derived<["light" | "dark" | "system", string, IconName][]>([
+    ["light", t.nav.themeLight, "sun"],
+    ["dark", t.nav.themeDark, "moon"],
+    ["system", t.nav.themeSystem, "monitor"],
+  ]);
+
+  const langOptions: ["ko" | "en", string][] = [
+    ["ko", "한국어"],
+    ["en", "English"],
   ];
 
   let mobileOpen = $state(false);
@@ -121,13 +139,13 @@
 
 <!-- Desktop Sidebar (lg+) -->
 <nav
-  aria-label="주 사이드바"
+  aria-label={t.site.mainSidebar}
   class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col"
 >
   <aside
     class="flex grow flex-col gap-y-6 overflow-y-auto border-r border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
   >
-    <!-- Brand & Theme -->
+    <!-- Brand, Language & Theme -->
     <div class="flex items-center justify-between gap-2">
       <a
         href="/"
@@ -148,18 +166,30 @@
         </div>
       </a>
 
-      <button
-        type="button"
-        onclick={() => themeStore.cycle()}
-        aria-label="테마 전환"
-        title={`현재 테마: ${themeStore.mode}`}
-        class="cursor-pointer rounded-md p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
-      >
-        <Icon
-          name={themeStore.mode === "dark" ? "moon" : themeStore.mode === "light" ? "sun" : "monitor"}
-          class="size-4"
-        />
-      </button>
+      <div class="flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          onclick={() => localeStore.toggle()}
+          aria-label={t.site.switchLangLabel}
+          title={t.site.switchLangLabel}
+          class="cursor-pointer rounded-md px-2 py-1.5 font-mono text-xs font-semibold text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+        >
+          {localeStore.current === "ko" ? "EN" : "KO"}
+        </button>
+
+        <button
+          type="button"
+          onclick={() => themeStore.cycle()}
+          aria-label={t.site.toggleThemeLabel}
+          title={`${t.site.currentThemePrefix}: ${themeStore.mode}`}
+          class="cursor-pointer rounded-md p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+        >
+          <Icon
+            name={themeStore.mode === "dark" ? "moon" : themeStore.mode === "light" ? "sun" : "monitor"}
+            class="size-4"
+          />
+        </button>
+      </div>
     </div>
 
     <!-- Navigation Sections -->
@@ -268,7 +298,7 @@
               {userName}
             </span>
             <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-              {isLoggedIn ? "Discord 인증됨" : "로그인 / 테마 설정"}
+              {isLoggedIn ? t.nav.discordAuthed : t.nav.loginOrTheme}
             </span>
           </span>
         </span>
@@ -280,26 +310,48 @@
           class="absolute bottom-full left-0 right-0 z-50 mb-2 rounded-md border border-gray-200 bg-white p-1.5 shadow-lg dark:border-gray-800 dark:bg-[#090E1A]"
         >
           <p class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-            {isLoggedIn ? `${userName} (Discord)` : "비로그인 상태"}
+            {isLoggedIn ? `${userName} (Discord)` : t.nav.loggedOut}
           </p>
           <div class="my-1 h-px bg-gray-200 dark:bg-gray-800"></div>
           <p class="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-            테마 설정
+            {t.nav.themeSettings}
           </p>
-          {#each [["light", "라이트 모드", "sun"], ["dark", "다크 모드", "moon"], ["system", "시스템 연동", "monitor"]] as [val, label, ic]}
+          {#each themeOptions as [val, label, ic]}
             <button
               type="button"
               onclick={() => {
-                themeStore.set(val as "light" | "dark" | "system");
+                themeStore.set(val);
                 profileMenuOpen = false;
               }}
               class="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm text-gray-800 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <span class="flex items-center gap-2">
-                <Icon name={ic as IconName} class="size-4 text-gray-500" />
+                <Icon name={ic} class="size-4 text-gray-500" />
                 {label}
               </span>
               {#if themeStore.mode === val}
+                <Icon name="check" class="size-4 text-indigo-600 dark:text-indigo-400" />
+              {/if}
+            </button>
+          {/each}
+          <div class="my-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+          <p class="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+            {t.nav.languageSettings}
+          </p>
+          {#each langOptions as [val, label]}
+            <button
+              type="button"
+              onclick={() => {
+                localeStore.set(val);
+                profileMenuOpen = false;
+              }}
+              class="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm text-gray-800 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <span class="flex items-center gap-2">
+                <Icon name="globe" class="size-4 text-gray-500" />
+                {label}
+              </span>
+              {#if localeStore.current === val}
                 <Icon name="check" class="size-4 text-indigo-600 dark:text-indigo-400" />
               {/if}
             </button>
@@ -312,7 +364,7 @@
               class="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
             >
               <Icon name="logout" class="size-4" />
-              Discord 로그아웃
+              {t.nav.discordSignOut}
             </button>
           {:else}
             <a
@@ -321,7 +373,7 @@
               class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10"
             >
               <Icon name="login" class="size-4" />
-              Discord로 로그인
+              {t.nav.discordSignIn}
             </a>
           {/if}
         </div>
@@ -346,11 +398,21 @@
     </div>
   </a>
 
-  <div class="flex items-center gap-1.5">
+  <div class="flex items-center gap-1">
+    <button
+      type="button"
+      onclick={() => localeStore.toggle()}
+      aria-label={t.site.switchLangLabel}
+      title={t.site.switchLangLabel}
+      class="cursor-pointer rounded-md px-2 py-1.5 font-mono text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+    >
+      {localeStore.current === "ko" ? "EN" : "KO"}
+    </button>
+
     <button
       type="button"
       onclick={() => themeStore.cycle()}
-      aria-label="테마 전환"
+      aria-label={t.site.toggleThemeLabel}
       class="cursor-pointer rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
     >
       <Icon
@@ -362,7 +424,7 @@
     <button
       type="button"
       onclick={() => (mobileOpen = true)}
-      aria-label="사이드바 열기"
+      aria-label={t.site.openSidebar}
       class="cursor-pointer rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
     >
       <Icon name="menu" class="size-5" />
@@ -376,11 +438,11 @@
     class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs lg:hidden"
     role="dialog"
     aria-modal="true"
-    aria-label="모바일 내비게이션"
+    aria-label={t.site.mobileNav}
   >
     <button
       type="button"
-      aria-label="닫기"
+      aria-label={t.site.close}
       onclick={() => (mobileOpen = false)}
       class="absolute inset-0 bg-transparent"
     ></button>
@@ -395,7 +457,7 @@
         <button
           type="button"
           onclick={() => (mobileOpen = false)}
-          aria-label="메뉴 닫기"
+          aria-label={t.site.closeMenu}
           class="cursor-pointer rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <Icon name="close" class="size-5" />
@@ -469,7 +531,7 @@
               {/if}
               <div>
                 <p class="text-sm font-medium text-gray-900 dark:text-gray-50">{userName}</p>
-                <p class="text-xs text-gray-500">Discord 인증됨</p>
+                <p class="text-xs text-gray-500">{t.nav.discordAuthed}</p>
               </div>
             </div>
             <button
@@ -478,7 +540,7 @@
               class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-red-200 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
             >
               <Icon name="logout" class="size-4" />
-              Discord 로그아웃
+              {t.nav.discordSignOut}
             </button>
           {:else}
             <a
@@ -487,7 +549,7 @@
               class="flex w-full items-center justify-center gap-2 rounded-md bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-500"
             >
               <Icon name="login" class="size-4" />
-              Discord로 로그인
+              {t.nav.discordSignIn}
             </a>
           {/if}
         </div>

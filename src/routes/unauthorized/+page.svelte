@@ -1,9 +1,12 @@
 <script lang="ts">
   import Icon from "#lib/components/Icon.svelte";
+  import { localeStore } from "#lib/locale.svelte.ts";
+
+  let t = $derived(localeStore.t.unauthorized);
 </script>
 
 <svelte:head>
-  <title>접근 권한 없음 | Azest_Kingscrown</title>
+  <title>{t.pageTitle}</title>
 </svelte:head>
 
 <div class="flex min-h-[70vh] items-center justify-center">
@@ -17,11 +20,10 @@
         403 Forbidden
       </span>
       <h1 class="text-xl font-bold text-gray-900 dark:text-gray-50">
-        접근 권한이 없습니다
+        {t.heading}
       </h1>
       <p class="break-keep text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-        죄송합니다. 등록된 디스코드 화이트리스트 계정만 이 대시보드를 제어할 수 있습니다.
-        관리자에게 화이트리스트 등록을 요청하시거나 다른 계정으로 로그인해 주세요.
+        {t.description}
       </p>
     </div>
 
@@ -30,14 +32,14 @@
         href="/minecraft"
         class="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-indigo-500 dark:bg-indigo-500"
       >
-        제어 페이지로 돌아가기
+        {t.btnBackControl}
       </a>
       <a
         href="/"
         class="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-900"
       >
         <Icon name="home" class="size-4" />
-        메인 페이지로 이동
+        {t.btnBackHome}
       </a>
     </div>
   </div>

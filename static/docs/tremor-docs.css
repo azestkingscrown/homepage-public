@@ -152,6 +152,13 @@ a {
   color: var(--text-muted);
 }
 
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 .theme-btn {
   display: inline-flex;
   align-items: center;
@@ -166,6 +173,11 @@ a {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
+}
+
+.lang-btn {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 0.45rem 0.5rem;
 }
 
 .theme-btn:hover {

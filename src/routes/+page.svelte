@@ -3,10 +3,12 @@
   import GithubStats from "#lib/components/GithubStats.svelte";
   import Icon from "#lib/components/Icon.svelte";
   import ServerStatus from "#lib/components/ServerStatus.svelte";
+  import { localeStore } from "#lib/locale.svelte.ts";
   import { buildHostUrls, EXTERNAL_LINKS } from "#lib/siteLinks.ts";
 
   let { data } = $props();
   let urls = $derived(buildHostUrls(data.host));
+  let t = $derived(localeStore.t.home);
 </script>
 
 <div class="space-y-8">
@@ -17,12 +19,12 @@
         Overview
       </h1>
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        Personal Workspace, Infrastructure Monitoring &amp; Services
+        {t.subtitle}
       </p>
     </div>
     <div class="mt-2 sm:mt-0">
       <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-500/30 dark:bg-indigo-400/10 dark:text-indigo-400 dark:ring-indigo-400/30">
-        Full-stack Developer &amp; Server Admin
+        {t.badge}
       </span>
     </div>
   </div>
@@ -35,11 +37,10 @@
           Welcome
         </p>
         <h2 class="break-keep text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-50 sm:text-3xl">
-          안녕하세요. 아제스트 입니다.
+          {t.greeting}
         </h2>
         <p class="max-w-2xl break-keep text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
-          다양한 언어를 이용한 각종 개발과 서버 인프라 운영을 취미로 즐깁니다.
-          거창한 목표보다는 내가 필요해서 만든 도구들이 누군가에게도 도움이 되기를 바랍니다.
+          {t.bio}
         </p>
       </div>
 
@@ -49,14 +50,14 @@
           class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
         >
           <Icon name="book" class="size-4" />
-          치지직 봇 가이드
+          {t.btnGuide}
         </a>
         <a
           href={`${urls.chzzkUrl}/update`}
           class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 shadow-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-900"
         >
           <Icon name="branch" class="size-4" />
-          업데이트 내역
+          {t.btnUpdate}
         </a>
         <a
           href={EXTERNAL_LINKS.github}
@@ -74,7 +75,7 @@
           rel="noopener noreferrer"
           class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-3.5 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-200/80 dark:bg-gray-900 dark:text-gray-50 dark:hover:bg-gray-800"
         >
-          혀엉..
+          {t.btnBoy}
           <Icon name="external" class="size-3.5 text-gray-400" />
         </a>
       </div>
@@ -101,7 +102,7 @@
         href="/minecraft"
         class="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
       >
-        Minecraft 제어 패널 →
+        {t.minecraftPanel}
       </a>
     </div>
     <ServerStatus />
@@ -125,15 +126,14 @@
             <Icon name="shield" class="size-4" />
           </span>
           <h3 class="text-base font-semibold text-gray-900 dark:text-gray-50">
-            완전 익명 문의 시스템
+            {t.contactTitle}
           </h3>
           <span class="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
             1:1 Ticket
           </span>
         </div>
         <p class="break-keep text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-          프라이버시 보호를 위해 1:1 익명 티켓 시스템을 운영하고 있습니다.
-          상담이 시작되면 닉네임이 익명으로 처리되며, 종료 시 상담 내역은 안전하게 보관 후 자동 퇴장 처리됩니다.
+          {t.contactDesc}
         </p>
       </div>
       <div class="shrink-0">
@@ -144,7 +144,7 @@
           class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
         >
           <Icon name="discord" class="size-4" />
-          문의 서버 입장하기
+          {t.contactBtn}
         </a>
       </div>
     </div>

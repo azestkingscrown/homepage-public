@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { localeStore } from "#lib/locale.svelte.ts";
   import Icon from "./Icon.svelte";
 
   interface LanyardData {
@@ -14,28 +15,28 @@
 
   let data = $state<LanyardData | null>(null);
 
-  const statusMeta: Record<string, { label: string; dot: string; badge: string }> = {
+  let statusMeta = $derived<Record<string, { label: string; dot: string; badge: string }>>({
     online: {
-      label: "온라인",
+      label: localeStore.t.discord.online,
       dot: "bg-emerald-500",
       badge: "bg-emerald-50 text-emerald-800 ring-emerald-600/30 dark:bg-emerald-400/10 dark:text-emerald-400 dark:ring-emerald-400/20",
     },
     idle: {
-      label: "수면 중",
+      label: localeStore.t.discord.idle,
       dot: "bg-amber-400",
       badge: "bg-amber-50 text-amber-800 ring-amber-600/30 dark:bg-amber-400/10 dark:text-amber-400 dark:ring-amber-400/25",
     },
     dnd: {
-      label: "다른 용무 중",
+      label: localeStore.t.discord.dnd,
       dot: "bg-red-500",
       badge: "bg-red-50 text-red-800 ring-red-600/20 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-400/20",
     },
     offline: {
-      label: "오프라인",
+      label: localeStore.t.discord.offline,
       dot: "bg-gray-400",
       badge: "bg-gray-50 text-gray-700 ring-gray-500/25 dark:bg-gray-400/10 dark:text-gray-300 dark:ring-gray-400/20",
     },
-  };
+  });
 
   function getAvatarUrl(d: LanyardData): string {
     if (d.discord_user.avatar) {
