@@ -10,19 +10,19 @@
 </svelte:head>
 
 <div class="flex min-h-[70vh] items-center justify-center">
-  <div class="w-full max-w-md space-y-5 rounded-lg border border-gray-200 bg-white p-6 text-center shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A]">
-    <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-red-50 text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/30">
+  <div class="w-full max-w-md space-y-5 rounded-md border border-oc-border bg-oc-surface p-6 text-center">
+    <div class="mx-auto flex size-14 items-center justify-center rounded-full border border-[#ed5a5a]/30 bg-[#ed5a5a]/10 text-[#db2424] dark:text-[#ed5a5a]">
       <Icon name="shield" class="size-7" />
     </div>
 
     <div class="space-y-2">
-      <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-800 ring-1 ring-inset ring-red-600/20 dark:bg-red-400/10 dark:text-red-400">
+      <span class="inline-flex items-center rounded border border-[#ed5a5a]/30 bg-[#ed5a5a]/10 px-2 py-0.5 font-mono text-xs font-semibold text-[#db2424] dark:text-[#ed5a5a]">
         403 Forbidden
       </span>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-gray-50">
+      <h1 class="text-xl font-bold text-oc-strong">
         {t.heading}
       </h1>
-      <p class="break-keep text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+      <p class="break-keep text-sm leading-relaxed text-oc-text">
         {t.description}
       </p>
     </div>
@@ -30,13 +30,13 @@
     <div class="flex flex-col gap-2.5 pt-2">
       <a
         href="/minecraft"
-        class="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-indigo-500 dark:bg-indigo-500"
+        class="inline-flex w-full items-center justify-center rounded bg-oc-strong px-4 py-2 text-sm font-medium text-oc-inverted transition hover:bg-oc-strong-hover"
       >
         {t.btnBackControl}
       </a>
       <a
         href="/"
-        class="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-900"
+        class="inline-flex w-full items-center justify-center gap-1.5 rounded border border-oc-border bg-oc-bg px-4 py-2 text-sm font-medium text-oc-strong transition hover:border-oc-border-strong hover:bg-oc-hover"
       >
         <Icon name="home" class="size-4" />
         {t.btnBackHome}

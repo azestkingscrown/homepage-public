@@ -33,22 +33,22 @@
   let badgeClass = $derived.by(() => {
     if (status === "running") {
       return health === "healthy"
-        ? "bg-emerald-50 text-emerald-800 ring-emerald-600/30 dark:bg-emerald-400/10 dark:text-emerald-400"
-        : "bg-amber-50 text-amber-800 ring-amber-600/30 dark:bg-amber-400/10 dark:text-amber-400";
+        ? "border-[#54d483]/30 bg-[#54d483]/10 text-[#239f50] dark:text-[#54d483]"
+        : "border-[#f4b434]/30 bg-[#f4b434]/10 text-[#eb980a] dark:text-[#f4b434]";
     }
     if (status === "exited" || status === "error") {
-      return "bg-red-50 text-red-800 ring-red-600/20 dark:bg-red-400/10 dark:text-red-400";
+      return "border-[#ed5a5a]/30 bg-[#ed5a5a]/10 text-[#db2424] dark:text-[#ed5a5a]";
     }
-    return "bg-gray-100 text-gray-700 ring-gray-500/25 dark:bg-gray-800 dark:text-gray-300";
+    return "border-oc-border bg-oc-subtle text-oc-muted";
   });
 
   let dotClass = $derived.by(() => {
     if (status === "running") {
       return health === "healthy"
-        ? "bg-emerald-500 ring-emerald-500/20"
-        : "bg-amber-400 ring-amber-400/20 animate-pulse";
+        ? "bg-[#239f50] ring-[#54d483]/20 dark:bg-[#54d483]"
+        : "bg-[#eb980a] ring-[#f4b434]/20 animate-pulse dark:bg-[#f4b434]";
     }
-    return "bg-red-500 ring-red-500/20";
+    return "bg-[#db2424] ring-[#ed5a5a]/20 dark:bg-[#ed5a5a]";
   });
 
   onMount(() => {
@@ -129,25 +129,25 @@
   <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <div class="flex items-center gap-2">
-        <span class="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-500/30 dark:bg-indigo-400/10 dark:text-indigo-400">
+        <span class="rounded border border-oc-border bg-oc-subtle px-2 py-0.5 font-mono text-xs font-medium text-oc-text">
           Discord Auth
         </span>
-        <span class="rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ring-inset {badgeClass}">
+        <span class="rounded border px-2 py-0.5 font-mono text-xs font-semibold {badgeClass}">
           {displayStatus}
         </span>
       </div>
-      <h1 class="mt-2 flex items-center gap-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-        <Icon name="gamepad" class="size-6 text-indigo-600 dark:text-indigo-400" />
+      <h1 class="mt-2 flex items-center gap-2 text-2xl font-bold tracking-tight text-oc-strong">
+        <Icon name="gamepad" class="size-6 text-oc-strong" />
         {t.heading}
       </h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+      <p class="mt-1 text-sm text-oc-muted">
         {t.subheading}
       </p>
     </div>
 
     <a
       href="/admin"
-      class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-900 shadow-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-900"
+      class="inline-flex items-center gap-1.5 rounded border border-oc-border bg-oc-bg px-3 py-1.5 text-xs font-medium text-oc-strong transition hover:border-oc-border-strong hover:bg-oc-hover"
     >
       <Icon name="admin" class="size-4" />
       {t.btnAdminLogs}
@@ -156,42 +156,42 @@
 
   <!-- Control Panel -->
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-    <div class="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A] lg:col-span-5">
+    <div class="flex flex-col justify-between gap-4 rounded-md border border-oc-border bg-oc-surface p-6 lg:col-span-5">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        <span class="font-mono text-xs font-semibold uppercase tracking-wider text-oc-muted">
           Server Status
         </span>
-        <span class="font-mono text-[11px] text-gray-400">3s polling</span>
+        <span class="font-mono text-[11px] text-oc-faint">3s polling</span>
       </div>
 
       <div class="flex items-center gap-3 py-2">
         <span class="size-3.5 shrink-0 rounded-full ring-4 {dotClass}"></span>
-        <span class="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+        <span class="text-2xl font-bold tracking-tight text-oc-strong">
           {displayStatus}
         </span>
       </div>
 
-      <p class="text-xs text-gray-500 dark:text-gray-400">
-        {t.containerStatus} <span class="font-mono font-semibold text-gray-700 dark:text-gray-300">{status}</span>
+      <p class="text-xs text-oc-muted">
+        {t.containerStatus} <span class="font-mono font-semibold text-oc-strong">{status}</span>
         {health ? ` · Health: ${health}` : ""}
       </p>
     </div>
 
-    <div class="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A] lg:col-span-7">
+    <div class="flex flex-col justify-between gap-4 rounded-md border border-oc-border bg-oc-surface p-6 lg:col-span-7">
       {#if !session}
         <div class="flex flex-1 flex-col items-start justify-between gap-4">
           <div>
-            <h2 class="text-base font-semibold text-gray-900 dark:text-gray-50">
+            <h2 class="text-base font-semibold text-oc-strong">
               {t.authRequiredTitle}
             </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="mt-1 text-sm text-oc-muted">
               {t.authRequiredDesc}
             </p>
           </div>
           <a
             href="/api/auth/signin?callbackUrl=/minecraft"
             data-sveltekit-reload
-            class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#5865F2] px-4 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-[#4752C4] sm:w-auto"
+            class="inline-flex w-full items-center justify-center gap-2 rounded bg-[#5865F2] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#4752C4] sm:w-auto"
           >
             <Icon name="discord" class="size-4" />
             {t.loginWithDiscord}
@@ -199,19 +199,19 @@
         </div>
       {:else}
         <div class="space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 px-3.5 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded border border-oc-border bg-oc-subtle px-3.5 py-2.5">
             <div class="flex items-center gap-2">
-              <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-400">
+              <span class="rounded border border-[#54d483]/30 bg-[#54d483]/10 px-2 py-0.5 font-mono text-xs font-semibold text-[#239f50] dark:text-[#54d483]">
                 {t.verifiedBadge}
               </span>
-              <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <span class="text-sm font-semibold text-oc-strong">
                 {session.user.name}{t.welcomeSuffix}
               </span>
             </div>
             <button
               type="button"
               onclick={handleSignOut}
-              class="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+              class="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-xs font-medium text-[#db2424] transition hover:bg-red-500/10 dark:text-[#ed5a5a]"
             >
               <Icon name="logout" class="size-3.5" />
               {t.signOut}
@@ -223,7 +223,7 @@
               type="button"
               onclick={() => handleAction("start")}
               disabled={isLoading || (status === "running" && health === "healthy")}
-              class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="play" class="size-4" />
               {t.btnStart}
@@ -232,7 +232,7 @@
               type="button"
               onclick={() => handleAction("stop")}
               disabled={isLoading || status === "exited" || status === "offline"}
-              class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-xs transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="stop" class="size-4" />
               {t.btnStop}
@@ -240,7 +240,7 @@
           </div>
 
           {#if isLoading}
-            <div class="flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50/70 px-3.5 py-2.5 text-xs font-medium text-indigo-800 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300">
+            <div class="flex items-center gap-2 rounded border border-oc-border-strong bg-oc-subtle px-3.5 py-2.5 text-xs font-medium text-oc-strong">
               <Icon name="loader" class="size-4 shrink-0 animate-spin" />
               <span>{loadingMessage}</span>
             </div>
@@ -250,12 +250,12 @@
     </div>
   </div>
 
-  <div class="h-px w-full bg-gray-200 dark:bg-gray-800"></div>
+  <div class="h-px w-full bg-oc-border"></div>
 
   <section class="space-y-4">
     <div class="flex items-center gap-2">
-      <Icon name="server" class="size-5 text-indigo-600 dark:text-indigo-400" />
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-50">{t.systemResources}</h2>
+      <Icon name="server" class="size-5 text-oc-strong" />
+      <h2 class="text-lg font-semibold text-oc-strong">{t.systemResources}</h2>
     </div>
     <ServerStatus />
   </section>

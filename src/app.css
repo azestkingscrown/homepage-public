@@ -1,9 +1,54 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  color-scheme: light;
+  --oc-bg: #fbfbfb;
+  --oc-surface: #ffffff;
+  --oc-subtle: #f5f5f5;
+  --oc-hover: #eeeeee;
+  --oc-border: #e0e0e0;
+  --oc-border-strong: #d2d2d2;
+  --oc-faint: #888888;
+  --oc-muted: #6b6b6b;
+  --oc-text: #5c5c5c;
+  --oc-strong: #161616;
+  --oc-strong-hover: #3a3a3a;
+  --oc-inverted: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+  --oc-bg: #0c0c0c;
+  --oc-surface: #161616;
+  --oc-subtle: #1a1a1a;
+  --oc-hover: #242424;
+  --oc-border: #2e2e2e;
+  --oc-border-strong: #4b4b4b;
+  --oc-faint: #6a6a6a;
+  --oc-muted: #8f8f8f;
+  --oc-text: #aeaeae;
+  --oc-strong: #fafafa;
+  --oc-strong-hover: #dbdbdb;
+  --oc-inverted: #0c0c0c;
+}
+
 @theme inline {
   --font-sans: "Inter", "Noto Sans KR", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-oc-bg: var(--oc-bg);
+  --color-oc-surface: var(--oc-surface);
+  --color-oc-subtle: var(--oc-subtle);
+  --color-oc-hover: var(--oc-hover);
+  --color-oc-border: var(--oc-border);
+  --color-oc-border-strong: var(--oc-border-strong);
+  --color-oc-faint: var(--oc-faint);
+  --color-oc-muted: var(--oc-muted);
+  --color-oc-text: var(--oc-text);
+  --color-oc-strong: var(--oc-strong);
+  --color-oc-strong-hover: var(--oc-strong-hover);
+  --color-oc-inverted: var(--oc-inverted);
 
   --animate-fadeInSlide: fadeInSlide 250ms ease-out forwards;
 }
@@ -23,6 +68,8 @@
   html {
     height: 100%;
     scroll-behavior: smooth;
+    background-color: var(--oc-bg);
+    color: var(--oc-strong);
   }
 
   body {
@@ -30,6 +77,11 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--oc-border-strong) transparent;
   }
 
   img[data-lightbox="true"] {

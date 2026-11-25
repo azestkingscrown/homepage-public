@@ -6,14 +6,14 @@ export function cx(...args: ClassValue[]) {
 }
 
 export const focusInput = [
-  "focus:ring-2",
-  "focus:ring-indigo-200 dark:focus:ring-indigo-700/30",
-  "focus:border-indigo-500 dark:focus:border-indigo-700",
+  "focus:ring-1",
+  "focus:ring-oc-border-strong",
+  "focus:border-oc-strong",
 ];
 
 export const focusRing = [
-  "outline outline-offset-2 outline-0 focus-visible:outline-2",
-  "outline-indigo-500 dark:outline-indigo-500",
+  "outline outline-offset-2 outline-0 focus-visible:outline-1",
+  "outline-oc-strong",
 ];
 
 export const hasErrorInput = [

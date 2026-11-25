@@ -1,12 +1,12 @@
 # Azest_Kingscrown Personal Homepage & Infra Dashboard
 
 SvelteKit 3 + Svelte 5 + Tailwind CSS v4 기반의 개인 홈페이지 및 서버/인프라 관리 대시보드입니다.  
-Tremor Dashboard 스타일의 UI로 서버 상태 모니터링, Discord 실시간 상태(Lanyard API), Cloudflare DDNS 관리, Docker Minecraft 서버 제어, 파일 호스팅 기능을 제공합니다.
+`opencode.ai` 스타일의 다크 미니멀 UI로 서버 상태 모니터링, Discord 실시간 상태(Lanyard API), Cloudflare DDNS 관리, Docker Minecraft 서버 제어, 파일 호스팅 기능을 제공합니다.
 
 ## Tech Stack
 
 - **Framework**: SvelteKit 3 (`@sveltejs/kit` + `@sveltejs/adapter-node`)
-- **UI**: Svelte 5 Runes, Tailwind CSS v4, Tremor Dashboard aesthetic (`Indigo` accent, Dark/Light/System theme)
+- **UI**: Svelte 5 Runes, Tailwind CSS v4, opencode.ai-inspired Dark Minimal aesthetic (Dark default, Dark/Light/System theme)
 - **Auth**: Custom Discord OAuth2 + HMAC-SHA256 Signed HttpOnly Session + TOTP (`otplib`)
 - **Runtime**: Node.js 24, TypeScript, Vite 8
 

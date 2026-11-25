@@ -18,23 +18,23 @@
   let statusMeta = $derived<Record<string, { label: string; dot: string; badge: string }>>({
     online: {
       label: localeStore.t.discord.online,
-      dot: "bg-emerald-500",
-      badge: "bg-emerald-50 text-emerald-800 ring-emerald-600/30 dark:bg-emerald-400/10 dark:text-emerald-400 dark:ring-emerald-400/20",
+      dot: "bg-[#239f50] dark:bg-[#54d483]",
+      badge: "border-[#54d483]/30 bg-[#54d483]/10 text-[#239f50] dark:text-[#54d483]",
     },
     idle: {
       label: localeStore.t.discord.idle,
-      dot: "bg-amber-400",
-      badge: "bg-amber-50 text-amber-800 ring-amber-600/30 dark:bg-amber-400/10 dark:text-amber-400 dark:ring-amber-400/25",
+      dot: "bg-[#eb980a] dark:bg-[#f4b434]",
+      badge: "border-[#f4b434]/30 bg-[#f4b434]/10 text-[#eb980a] dark:text-[#f4b434]",
     },
     dnd: {
       label: localeStore.t.discord.dnd,
-      dot: "bg-red-500",
-      badge: "bg-red-50 text-red-800 ring-red-600/20 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-400/20",
+      dot: "bg-[#db2424] dark:bg-[#ed5a5a]",
+      badge: "border-[#ed5a5a]/30 bg-[#ed5a5a]/10 text-[#db2424] dark:text-[#ed5a5a]",
     },
     offline: {
       label: localeStore.t.discord.offline,
-      dot: "bg-gray-400",
-      badge: "bg-gray-50 text-gray-700 ring-gray-500/25 dark:bg-gray-400/10 dark:text-gray-300 dark:ring-gray-400/20",
+      dot: "bg-oc-faint",
+      badge: "border-oc-border bg-oc-subtle text-oc-muted",
     },
   });
 
@@ -75,25 +75,25 @@
 
 {#if !data}
   <div
-    class="flex h-full items-center gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A]"
+    class="flex h-full items-center gap-4 rounded-md border border-oc-border bg-oc-surface p-5"
   >
-    <div class="size-12 shrink-0 animate-pulse rounded-full bg-gray-200 dark:bg-gray-800"></div>
+    <div class="size-12 shrink-0 animate-pulse rounded-full bg-oc-hover"></div>
     <div class="min-w-0 flex-1 space-y-2">
-      <div class="h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-800"></div>
-      <div class="h-3 w-20 animate-pulse rounded bg-gray-100 dark:bg-gray-900"></div>
+      <div class="h-4 w-28 animate-pulse rounded bg-oc-hover"></div>
+      <div class="h-3 w-20 animate-pulse rounded bg-oc-subtle"></div>
     </div>
   </div>
 {:else}
   {@const meta = statusMeta[data.discord_status] || statusMeta.offline}
   <div
-    class="flex h-full flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A]"
+    class="flex h-full flex-col justify-between gap-4 rounded-md border border-oc-border bg-oc-surface p-5"
   >
     <div class="flex items-center justify-between gap-2">
-      <span class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <Icon name="discord" class="size-4 text-[#5865F2]" />
+      <span class="inline-flex items-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-oc-muted">
+        <Icon name="discord" class="size-4 text-oc-strong" />
         Discord Presence
       </span>
-      <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ring-inset {meta.badge}">
+      <span class="inline-flex items-center rounded border px-2 py-0.5 font-mono text-xs font-semibold {meta.badge}">
         {meta.label}
       </span>
     </div>
@@ -104,18 +104,18 @@
           src={getAvatarUrl(data)}
           alt="Discord Avatar"
           referrerpolicy="no-referrer"
-          class="user-icon size-12 rounded-full border border-gray-200 object-cover dark:border-gray-800"
+          class="user-icon size-12 rounded-full border border-oc-border object-cover"
         />
         <span
-          class="absolute bottom-0 right-0 size-3.5 rounded-full border-2 border-white dark:border-[#090E1A] {meta.dot}"
+          class="absolute bottom-0 right-0 size-3.5 rounded-full border-2 border-oc-surface {meta.dot}"
           title={meta.label}
         ></span>
       </div>
       <div class="min-w-0 flex-1">
-        <p class="truncate text-base font-bold text-gray-900 dark:text-gray-50">
+        <p class="truncate text-base font-bold text-oc-strong">
           {data.discord_user.global_name || data.discord_user.username}
         </p>
-        <p class="truncate font-mono text-xs text-gray-500 dark:text-gray-400">
+        <p class="truncate font-mono text-xs text-oc-muted">
           @{data.discord_user.username}
         </p>
       </div>

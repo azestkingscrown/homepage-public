@@ -4,9 +4,9 @@
   // 1. Theme Sync (compatible with localStorage key "theme")
   function getStoredTheme() {
     try {
-      return localStorage.getItem("theme") || "system";
+      return localStorage.getItem("theme") || "dark";
     } catch {
-      return "system";
+      return "dark";
     }
   }
 

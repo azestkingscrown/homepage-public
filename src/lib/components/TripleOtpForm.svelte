@@ -57,21 +57,21 @@
 </script>
 
 <div class="flex justify-center pt-4">
-  <div class="w-full max-w-md space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A]">
+  <div class="w-full max-w-md space-y-5 rounded-md border border-oc-border bg-oc-surface p-6">
     <div class="flex items-center gap-3">
-      <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400">
+      <div class="flex size-10 shrink-0 items-center justify-center rounded border border-oc-border bg-oc-subtle text-oc-strong">
         <Icon name="lock" class="size-5" />
       </div>
       <div>
         <div class="flex items-center gap-2">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-gray-50">
+          <h2 class="text-base font-semibold text-oc-strong">
             {title}
           </h2>
-          <span class="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-500/30 dark:bg-indigo-400/10 dark:text-indigo-400">
+          <span class="rounded border border-oc-border bg-oc-subtle px-1.5 py-0.5 font-mono text-[10px] font-medium text-oc-text">
             3중 OTP
           </span>
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
+        <p class="text-xs text-oc-muted">
           {subtitle}
         </p>
       </div>
@@ -92,14 +92,14 @@
           <div class="flex items-center justify-between text-xs">
             <label
               for={`otp-slot-${idx + 1}`}
-              class="font-medium text-gray-700 dark:text-gray-300"
+              class="font-mono font-medium text-oc-text"
             >
               OTP #{idx + 1}
             </label>
             <span
               class={ready
-                ? "inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400"
-                : "font-mono text-gray-400 dark:text-gray-500"}
+                ? "inline-flex items-center gap-1 font-medium text-[#239f50] dark:text-[#54d483]"
+                : "font-mono text-oc-faint"}
             >
               {#if ready}
                 <Icon name="check" class="size-3.5" />
@@ -120,13 +120,13 @@
             value={tokens[idx]}
             oninput={(e) => handleInput(idx, e.currentTarget.value)}
             onkeydown={(e) => handleKeyDown(idx, e)}
-            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center font-mono text-lg tracking-[0.3em] text-gray-900 shadow-xs outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:focus:border-indigo-700 dark:focus:ring-indigo-700/30"
+            class="block w-full rounded border border-oc-border bg-oc-bg px-3 py-2 text-center font-mono text-lg tracking-[0.3em] text-oc-strong outline-none transition placeholder:text-oc-faint focus:border-oc-strong focus:ring-1 focus:ring-oc-border-strong"
           />
         </div>
       {/each}
 
       {#if errorMessage}
-        <p class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-400">
+        <p class="rounded border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-[#db2424] dark:text-[#ed5a5a]">
           {errorMessage}
         </p>
       {/if}
@@ -134,7 +134,7 @@
       <button
         type="submit"
         disabled={loading || !allFilled}
-        class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+        class="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-oc-strong px-4 py-2 text-sm font-medium text-oc-inverted transition hover:bg-oc-strong-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Icon name="shield" class="size-4" />
         {loading ? loadingLabel : submitLabel}

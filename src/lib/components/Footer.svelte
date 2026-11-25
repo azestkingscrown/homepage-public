@@ -10,12 +10,12 @@
 
 {#if !hideFooter}
   <footer
-    class="mt-auto border-t border-gray-200 bg-white/60 dark:border-gray-800/80 dark:bg-gray-950/60"
+    class="mt-auto border-t border-oc-border bg-oc-bg"
   >
     <div
       class="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6 lg:px-10"
     >
-      <p class="text-xs text-gray-500 dark:text-gray-400">
+      <p class="font-mono text-xs text-oc-muted">
         © 2026 Azest_Kingscrown. All rights reserved.
       </p>
 
@@ -24,7 +24,7 @@
           href={EXTERNAL_LINKS.kakaopay}
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 rounded-md bg-[#FEE500] px-3.5 py-2 text-xs font-bold text-gray-950 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
+          class="inline-flex items-center gap-1.5 rounded bg-[#FEE500] px-3.5 py-2 text-xs font-bold text-[#0c0c0c] transition hover:opacity-90"
         >
           <Icon name="heart" class="size-3.5 shrink-0" />
           {t.supportKr}
@@ -33,7 +33,7 @@
           href={EXTERNAL_LINKS.kofi}
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 rounded-md bg-[#FF5E5B] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
+          class="inline-flex items-center gap-1.5 rounded bg-[#FF5E5B] px-3.5 py-2 text-xs font-bold text-white transition hover:opacity-90"
         >
           <Icon name="cup" class="size-3.5 shrink-0" />
           {t.supportGlobal}

@@ -17,6 +17,7 @@
 
   let { session }: { session: SessionProp | null } = $props();
 
+
   let t = $derived(localeStore.t);
 
   let coreNavigation = $derived<
@@ -95,8 +96,8 @@
 
   function navLinkClass(active: boolean): string {
     return active
-      ? "flex items-center justify-between gap-x-2.5 rounded-md bg-indigo-50/80 px-2.5 py-2 text-sm font-medium text-indigo-600 transition dark:bg-indigo-500/10 dark:text-indigo-400"
-      : "flex items-center justify-between gap-x-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-50";
+      ? "flex items-center justify-between gap-x-2.5 rounded border border-oc-border bg-oc-subtle px-2.5 py-2 text-sm font-medium text-oc-strong transition"
+      : "flex items-center justify-between gap-x-2.5 rounded border border-transparent px-2.5 py-2 text-sm font-medium text-oc-muted transition hover:bg-oc-subtle hover:text-oc-strong";
   }
 
   async function handleSignOut() {
@@ -143,24 +144,24 @@
   class="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col"
 >
   <aside
-    class="flex grow flex-col gap-y-6 overflow-y-auto border-r border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950"
+    class="flex grow flex-col gap-y-6 overflow-y-auto border-r border-oc-border bg-oc-bg p-4"
   >
     <!-- Brand, Language & Theme -->
     <div class="flex items-center justify-between gap-2">
       <a
         href="/"
-        class="flex min-w-0 flex-1 items-center gap-x-3 rounded-md p-1.5 transition hover:bg-gray-100 dark:hover:bg-gray-900"
+        class="flex min-w-0 flex-1 items-center gap-x-3 rounded p-1.5 transition hover:bg-oc-subtle"
       >
         <span
-          class="flex aspect-square size-8 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-xs font-bold tracking-tight text-white shadow-xs dark:bg-indigo-500"
+          class="flex aspect-square size-8 shrink-0 items-center justify-center rounded bg-oc-strong font-mono text-xs font-bold tracking-tight text-oc-inverted"
         >
           {SITE_META.initials}
         </span>
         <div class="min-w-0 flex-1 text-left">
-          <p class="truncate text-sm font-semibold text-gray-900 dark:text-gray-50">
+          <p class="truncate text-sm font-semibold text-oc-strong">
             {SITE_META.name}
           </p>
-          <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+          <p class="truncate font-mono text-xs text-oc-muted">
             {SITE_META.subtitle}
           </p>
         </div>
@@ -172,7 +173,7 @@
           onclick={() => localeStore.toggle()}
           aria-label={t.site.switchLangLabel}
           title={t.site.switchLangLabel}
-          class="cursor-pointer rounded-md px-2 py-1.5 font-mono text-xs font-semibold text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+          class="cursor-pointer rounded px-2 py-1.5 font-mono text-xs font-semibold text-oc-muted transition hover:bg-oc-hover hover:text-oc-strong"
         >
           {localeStore.current === "ko" ? "EN" : "KO"}
         </button>
@@ -182,7 +183,7 @@
           onclick={() => themeStore.cycle()}
           aria-label={t.site.toggleThemeLabel}
           title={`${t.site.currentThemePrefix}: ${themeStore.mode}`}
-          class="cursor-pointer rounded-md p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+          class="cursor-pointer rounded p-2 text-oc-muted transition hover:bg-oc-hover hover:text-oc-strong"
         >
           <Icon
             name={themeStore.mode === "dark" ? "moon" : themeStore.mode === "light" ? "sun" : "monitor"}
@@ -195,7 +196,7 @@
     <!-- Navigation Sections -->
     <div class="flex flex-1 flex-col gap-y-7">
       <div>
-        <span class="px-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <span class="px-2.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
           Workspace
         </span>
         <ul class="mt-2 space-y-0.5">
@@ -218,7 +219,7 @@
       </div>
 
       <div>
-        <span class="px-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <span class="px-2.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
           Services &amp; Admin
         </span>
         <ul class="mt-2 space-y-0.5">
@@ -232,8 +233,8 @@
                 </span>
                 <span
                   class={active
-                    ? "rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
-                    : "rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-900 dark:text-gray-500"}
+                    ? "rounded border border-oc-border-strong bg-oc-hover px-1.5 py-0.5 font-mono text-[10px] font-medium text-oc-strong"
+                    : "rounded border border-oc-border bg-oc-subtle px-1.5 py-0.5 font-mono text-[10px] font-medium text-oc-muted"}
                 >
                   {item.tag}
                 </span>
@@ -244,7 +245,7 @@
       </div>
 
       <div>
-        <span class="px-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <span class="px-2.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
           Shortcuts
         </span>
         <ul class="mt-2 space-y-0.5">
@@ -260,7 +261,7 @@
                   <Icon name={item.icon} class="size-4 shrink-0" />
                   {item.name}
                 </span>
-                <Icon name="external" class="size-3.5 shrink-0 text-gray-400" />
+                <Icon name="external" class="size-3.5 shrink-0 text-oc-faint" />
               </a>
             </li>
           {/each}
@@ -269,11 +270,11 @@
     </div>
 
     <!-- Bottom User Profile & Theme Dropdown -->
-    <div class="relative mt-auto border-t border-gray-200 pt-3 dark:border-gray-800">
+    <div class="relative mt-auto border-t border-oc-border pt-3">
       <button
         type="button"
         onclick={() => (profileMenuOpen = !profileMenuOpen)}
-        class="group flex w-full cursor-pointer items-center justify-between rounded-md p-2 text-left text-sm transition hover:bg-gray-100 dark:hover:bg-gray-900"
+        class="group flex w-full cursor-pointer items-center justify-between rounded p-2 text-left text-sm transition hover:bg-oc-subtle"
       >
         <span class="flex min-w-0 items-center gap-2.5">
           {#if isLoggedIn && resolvedAvatarSrc}
@@ -282,38 +283,38 @@
               alt={userName}
               referrerpolicy="no-referrer"
               onerror={handleAvatarError}
-              class="user-icon size-8 shrink-0 rounded-full border border-gray-300 object-cover dark:border-gray-700"
+              class="user-icon size-8 shrink-0 rounded-full border border-oc-border-strong object-cover"
             />
           {:else}
             <span
               class={isLoggedIn
-                ? "flex size-8 shrink-0 items-center justify-center rounded-full border border-indigo-300 bg-indigo-50 text-xs font-semibold text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/15 dark:text-indigo-300"
-                : "flex size-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-xs font-semibold text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300"}
+                ? "flex size-8 shrink-0 items-center justify-center rounded-full border border-oc-border-strong bg-oc-subtle font-mono text-xs font-semibold text-oc-strong"
+                : "flex size-8 shrink-0 items-center justify-center rounded-full border border-oc-border bg-oc-surface font-mono text-xs font-semibold text-oc-text"}
             >
               {initials}
             </span>
           {/if}
           <span class="min-w-0">
-            <span class="block truncate text-sm font-medium text-gray-900 dark:text-gray-50">
+            <span class="block truncate text-sm font-medium text-oc-strong">
               {userName}
             </span>
-            <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
+            <span class="block truncate text-xs text-oc-muted">
               {isLoggedIn ? t.nav.discordAuthed : t.nav.loginOrTheme}
             </span>
           </span>
         </span>
-        <Icon name="more" class="size-4 shrink-0 text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+        <Icon name="more" class="size-4 shrink-0 text-oc-faint group-hover:text-oc-strong" />
       </button>
 
       {#if profileMenuOpen}
         <div
-          class="absolute bottom-full left-0 right-0 z-50 mb-2 rounded-md border border-gray-200 bg-white p-1.5 shadow-lg dark:border-gray-800 dark:bg-[#090E1A]"
+          class="absolute bottom-full left-0 right-0 z-50 mb-2 rounded-md border border-oc-border bg-oc-surface p-1.5 shadow-lg"
         >
-          <p class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+          <p class="px-2 py-1 text-xs font-medium text-oc-muted">
             {isLoggedIn ? `${userName} (Discord)` : t.nav.loggedOut}
           </p>
-          <div class="my-1 h-px bg-gray-200 dark:bg-gray-800"></div>
-          <p class="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          <div class="my-1 h-px bg-oc-border"></div>
+          <p class="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
             {t.nav.themeSettings}
           </p>
           {#each themeOptions as [val, label, ic]}
@@ -323,19 +324,19 @@
                 themeStore.set(val);
                 profileMenuOpen = false;
               }}
-              class="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm text-gray-800 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="flex w-full cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm text-oc-text transition hover:bg-oc-hover hover:text-oc-strong"
             >
               <span class="flex items-center gap-2">
-                <Icon name={ic} class="size-4 text-gray-500" />
+                <Icon name={ic} class="size-4 text-oc-muted" />
                 {label}
               </span>
               {#if themeStore.mode === val}
-                <Icon name="check" class="size-4 text-indigo-600 dark:text-indigo-400" />
+                <Icon name="check" class="size-4 text-oc-strong" />
               {/if}
             </button>
           {/each}
-          <div class="my-1 h-px bg-gray-200 dark:bg-gray-800"></div>
-          <p class="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          <div class="my-1 h-px bg-oc-border"></div>
+          <p class="px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
             {t.nav.languageSettings}
           </p>
           {#each langOptions as [val, label]}
@@ -345,23 +346,23 @@
                 localeStore.set(val);
                 profileMenuOpen = false;
               }}
-              class="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm text-gray-800 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+              class="flex w-full cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm text-oc-text transition hover:bg-oc-hover hover:text-oc-strong"
             >
               <span class="flex items-center gap-2">
-                <Icon name="globe" class="size-4 text-gray-500" />
+                <Icon name="globe" class="size-4 text-oc-muted" />
                 {label}
               </span>
               {#if localeStore.current === val}
-                <Icon name="check" class="size-4 text-indigo-600 dark:text-indigo-400" />
+                <Icon name="check" class="size-4 text-oc-strong" />
               {/if}
             </button>
           {/each}
-          <div class="my-1 h-px bg-gray-200 dark:bg-gray-800"></div>
+          <div class="my-1 h-px bg-oc-border"></div>
           {#if isLoggedIn}
             <button
               type="button"
               onclick={handleSignOut}
-              class="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+              class="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-[#db2424] transition hover:bg-red-500/10 dark:text-[#ed5a5a]"
             >
               <Icon name="logout" class="size-4" />
               {t.nav.discordSignOut}
@@ -370,7 +371,7 @@
             <a
               href={signInUrl()}
               data-sveltekit-reload
-              class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10"
+              class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm font-medium text-oc-strong transition hover:bg-oc-hover"
             >
               <Icon name="login" class="size-4" />
               {t.nav.discordSignIn}
@@ -384,17 +385,17 @@
 
 <!-- Mobile Top Header (< lg) -->
 <header
-  class="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-gray-200 bg-white/90 px-4 shadow-xs backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90 sm:px-6 lg:hidden"
+  class="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-oc-border bg-oc-bg/95 px-4 backdrop-blur-md sm:px-6 lg:hidden"
 >
   <a href="/" class="flex items-center gap-x-2.5">
     <span
-      class="flex aspect-square size-8 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-xs font-bold text-white dark:bg-indigo-500"
+      class="flex aspect-square size-8 shrink-0 items-center justify-center rounded bg-oc-strong font-mono text-xs font-bold text-oc-inverted"
     >
       {SITE_META.initials}
     </span>
     <div>
-      <p class="text-sm font-semibold text-gray-900 dark:text-gray-50">{SITE_META.name}</p>
-      <p class="text-[11px] text-gray-500 dark:text-gray-400">{SITE_META.subtitle}</p>
+      <p class="text-sm font-semibold text-oc-strong">{SITE_META.name}</p>
+      <p class="font-mono text-[11px] text-oc-muted">{SITE_META.subtitle}</p>
     </div>
   </a>
 
@@ -404,7 +405,7 @@
       onclick={() => localeStore.toggle()}
       aria-label={t.site.switchLangLabel}
       title={t.site.switchLangLabel}
-      class="cursor-pointer rounded-md px-2 py-1.5 font-mono text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+      class="cursor-pointer rounded px-2 py-1.5 font-mono text-xs font-semibold text-oc-muted transition hover:bg-oc-hover hover:text-oc-strong"
     >
       {localeStore.current === "ko" ? "EN" : "KO"}
     </button>
@@ -413,7 +414,7 @@
       type="button"
       onclick={() => themeStore.cycle()}
       aria-label={t.site.toggleThemeLabel}
-      class="cursor-pointer rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+      class="cursor-pointer rounded p-2 text-oc-muted transition hover:bg-oc-hover hover:text-oc-strong"
     >
       <Icon
         name={themeStore.mode === "dark" ? "moon" : themeStore.mode === "light" ? "sun" : "monitor"}
@@ -425,7 +426,7 @@
       type="button"
       onclick={() => (mobileOpen = true)}
       aria-label={t.site.openSidebar}
-      class="cursor-pointer rounded-md p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+      class="cursor-pointer rounded p-2 text-oc-text transition hover:bg-oc-hover hover:text-oc-strong"
     >
       <Icon name="menu" class="size-5" />
     </button>
@@ -435,7 +436,7 @@
 <!-- Mobile Drawer -->
 {#if mobileOpen}
   <div
-    class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs lg:hidden"
+    class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs lg:hidden"
     role="dialog"
     aria-modal="true"
     aria-label={t.site.mobileNav}
@@ -447,18 +448,18 @@
       class="absolute inset-0 bg-transparent"
     ></button>
     <div
-      class="fixed inset-y-2 right-2 z-10 flex w-[88vw] max-w-xs flex-col overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-800 dark:bg-[#090E1A]"
+      class="fixed inset-y-2 right-2 z-10 flex w-[88vw] max-w-xs flex-col overflow-y-auto rounded-md border border-oc-border bg-oc-surface p-4 shadow-xl"
     >
-      <div class="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-800">
+      <div class="flex items-center justify-between border-b border-oc-border pb-3">
         <div>
-          <p class="text-sm font-semibold text-gray-900 dark:text-gray-50">{SITE_META.name}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{SITE_META.subtitle}</p>
+          <p class="text-sm font-semibold text-oc-strong">{SITE_META.name}</p>
+          <p class="font-mono text-xs text-oc-muted">{SITE_META.subtitle}</p>
         </div>
         <button
           type="button"
           onclick={() => (mobileOpen = false)}
           aria-label={t.site.closeMenu}
-          class="cursor-pointer rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          class="cursor-pointer rounded p-1.5 text-oc-muted transition hover:bg-oc-hover hover:text-oc-strong"
         >
           <Icon name="close" class="size-5" />
         </button>
@@ -466,7 +467,7 @@
 
       <div class="flex flex-1 flex-col gap-y-6 py-4">
         <div>
-          <span class="px-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <span class="px-2.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
             Workspace
           </span>
           <ul class="mt-2 space-y-0.5">
@@ -489,7 +490,7 @@
         </div>
 
         <div>
-          <span class="px-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <span class="px-2.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-oc-faint">
             Services &amp; Admin
           </span>
           <ul class="mt-2 space-y-0.5">
@@ -504,7 +505,7 @@
                     <Icon name={item.icon} class="size-4 shrink-0" />
                     {item.name}
                   </span>
-                  <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-900">
+                  <span class="rounded border border-oc-border bg-oc-subtle px-1.5 py-0.5 font-mono text-[10px] font-medium text-oc-muted">
                     {item.tag}
                   </span>
                 </a>
@@ -513,7 +514,7 @@
           </ul>
         </div>
 
-        <div class="mt-auto border-t border-gray-200 pt-3 dark:border-gray-800">
+        <div class="mt-auto border-t border-oc-border pt-3">
           {#if isLoggedIn}
             <div class="mb-2 flex items-center gap-2.5 px-2">
               {#if resolvedAvatarSrc}
@@ -522,22 +523,22 @@
                   alt={userName}
                   referrerpolicy="no-referrer"
                   onerror={handleAvatarError}
-                  class="user-icon size-8 rounded-full border border-gray-300 object-cover dark:border-gray-700"
+                  class="user-icon size-8 rounded-full border border-oc-border-strong object-cover"
                 />
               {:else}
-                <span class="flex size-8 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+                <span class="flex size-8 items-center justify-center rounded-full border border-oc-border-strong bg-oc-subtle font-mono text-xs font-semibold text-oc-strong">
                   {initials}
                 </span>
               {/if}
               <div>
-                <p class="text-sm font-medium text-gray-900 dark:text-gray-50">{userName}</p>
-                <p class="text-xs text-gray-500">{t.nav.discordAuthed}</p>
+                <p class="text-sm font-medium text-oc-strong">{userName}</p>
+                <p class="text-xs text-oc-muted">{t.nav.discordAuthed}</p>
               </div>
             </div>
             <button
               type="button"
               onclick={handleSignOut}
-              class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-red-200 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
+              class="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-red-500/30 py-2 text-sm font-medium text-[#db2424] transition hover:bg-red-500/10 dark:text-[#ed5a5a]"
             >
               <Icon name="logout" class="size-4" />
               {t.nav.discordSignOut}
@@ -546,7 +547,7 @@
             <a
               href={signInUrl()}
               data-sveltekit-reload
-              class="flex w-full items-center justify-center gap-2 rounded-md bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+              class="flex w-full items-center justify-center gap-2 rounded bg-oc-strong py-2 text-sm font-medium text-oc-inverted transition hover:bg-oc-strong-hover"
             >
               <Icon name="login" class="size-4" />
               {t.nav.discordSignIn}

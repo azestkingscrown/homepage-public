@@ -32,25 +32,25 @@
   function barColors(pct: number, neutral = false): { track: string; fill: string } {
     if (neutral) {
       return {
-        track: "bg-gray-200 dark:bg-gray-800",
-        fill: "bg-gray-600 dark:bg-gray-400",
+        track: "bg-oc-hover",
+        fill: "bg-oc-muted",
       };
     }
     if (pct >= 90) {
       return {
-        track: "bg-red-100 dark:bg-red-500/20",
-        fill: "bg-red-600 dark:bg-red-500",
+        track: "bg-red-500/15",
+        fill: "bg-[#db2424] dark:bg-[#ed5a5a]",
       };
     }
     if (pct >= 75) {
       return {
-        track: "bg-amber-100 dark:bg-amber-500/20",
-        fill: "bg-amber-500 dark:bg-amber-500",
+        track: "bg-amber-500/15",
+        fill: "bg-[#eb980a] dark:bg-[#f4b434]",
       };
     }
     return {
-      track: "bg-indigo-100 dark:bg-indigo-500/20",
-      fill: "bg-indigo-600 dark:bg-indigo-500",
+      track: "bg-oc-hover",
+      fill: "bg-oc-strong",
     };
   }
 
@@ -86,22 +86,22 @@
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
     {#each [0, 1, 2, 3] as i (i)}
       <div
-        class="animate-pulse rounded-lg border border-gray-200 bg-white p-5 shadow-xs dark:border-gray-800/90 dark:bg-[#090E1A]"
+        class="animate-pulse rounded-md border border-oc-border bg-oc-surface p-5"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <Icon name="server" class="size-4 text-gray-300 dark:text-gray-700" />
-            <div class="h-4 w-32 rounded bg-gray-200 dark:bg-gray-800"></div>
+            <Icon name="server" class="size-4 text-oc-faint" />
+            <div class="h-4 w-32 rounded bg-oc-hover"></div>
           </div>
-          <div class="h-5 w-14 rounded bg-gray-200 dark:bg-gray-800"></div>
+          <div class="h-5 w-14 rounded bg-oc-hover"></div>
         </div>
         <div class="mt-5 space-y-2.5">
-          <div class="h-2 w-full rounded bg-gray-200 dark:bg-gray-800"></div>
-          <div class="h-2 w-4/5 rounded bg-gray-200 dark:bg-gray-800"></div>
+          <div class="h-2 w-full rounded-sm bg-oc-hover"></div>
+          <div class="h-2 w-4/5 rounded-sm bg-oc-hover"></div>
         </div>
         <div class="mt-5 grid grid-cols-2 gap-3">
-          <div class="h-16 rounded-md bg-gray-100 dark:bg-gray-900"></div>
-          <div class="h-16 rounded-md bg-gray-100 dark:bg-gray-900"></div>
+          <div class="h-16 rounded border border-oc-border bg-oc-subtle"></div>
+          <div class="h-16 rounded border border-oc-border bg-oc-subtle"></div>
         </div>
       </div>
     {/each}
@@ -111,22 +111,22 @@
     {#each servers as server (server.name)}
       {#if server.error}
         <div
-          class="rounded-lg border border-red-200/80 bg-red-50/40 p-5 shadow-xs dark:border-red-900/60 dark:bg-red-950/15"
+          class="rounded-md border border-red-500/30 bg-red-500/5 p-5"
         >
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2">
-              <Icon name="alert" class="size-4 shrink-0 text-red-600 dark:text-red-400" />
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50">
+              <Icon name="alert" class="size-4 shrink-0 text-[#db2424] dark:text-[#ed5a5a]" />
+              <h3 class="text-sm font-semibold text-oc-strong">
                 {server.name}
               </h3>
             </div>
             <span
-              class="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-800 ring-1 ring-inset ring-red-600/20 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-400/20"
+              class="inline-flex items-center rounded border border-[#ed5a5a]/30 bg-[#ed5a5a]/10 px-2 py-0.5 font-mono text-xs font-semibold text-[#db2424] dark:text-[#ed5a5a]"
             >
               Offline
             </span>
           </div>
-          <div class="mt-3 flex items-center justify-between text-xs text-red-700 dark:text-red-400">
+          <div class="mt-3 flex items-center justify-between text-xs text-[#db2424] dark:text-[#ed5a5a]">
             <span>Status: {server.error}</span>
             {#if server.availability}
               <span class="font-mono tabular-nums">AV: {server.availability}%</span>
@@ -144,28 +144,28 @@
               ? { label: "DISK", data: server.disk, neutral: false }
               : null}
         <div
-          class="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-xs transition hover:border-indigo-300 dark:border-gray-800/90 dark:bg-[#090E1A] dark:hover:border-indigo-500/40"
+          class="flex flex-col justify-between gap-4 rounded-md border border-oc-border bg-oc-surface p-5 transition hover:border-oc-border-strong"
         >
           <!-- Header -->
-          <div class="flex items-start justify-between gap-2 border-b border-gray-100 pb-3 dark:border-gray-800/80">
+          <div class="flex items-start justify-between gap-2 border-b border-oc-border pb-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <span class="size-2 shrink-0 rounded-full bg-emerald-500 ring-4 ring-emerald-500/15"></span>
-                <h3 class="truncate text-sm font-semibold text-gray-900 dark:text-gray-50">
+                <span class="size-2 shrink-0 rounded-full bg-[#239f50] ring-4 ring-[#54d483]/15 dark:bg-[#54d483]"></span>
+                <h3 class="truncate text-sm font-semibold text-oc-strong">
                   {server.name}
                 </h3>
               </div>
               {#if server.totalOutbound}
-                <p class="mt-1 font-mono text-[11px] text-gray-500 dark:text-gray-400">
+                <p class="mt-1 font-mono text-[11px] text-oc-muted">
                   TX Total:
-                  <span class="font-semibold text-indigo-600 dark:text-indigo-400">
+                  <span class="font-semibold text-oc-strong">
                     {server.totalOutbound}
                   </span>
                 </p>
               {/if}
             </div>
             <span
-              class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-600/30 dark:bg-emerald-400/10 dark:text-emerald-400 dark:ring-emerald-400/20"
+              class="inline-flex items-center rounded border border-[#54d483]/30 bg-[#54d483]/10 px-2 py-0.5 font-mono text-xs font-semibold text-[#239f50] dark:text-[#54d483]"
             >
               {server.availability ? `${server.availability}%` : "Online"}
             </span>
@@ -175,11 +175,11 @@
           {#if server.cpus && server.cpus.length > 0}
             <div>
               <div class="mb-2 flex items-center justify-between text-xs">
-                <span class="inline-flex items-center gap-1 font-medium text-gray-600 dark:text-gray-400">
+                <span class="inline-flex items-center gap-1 font-medium text-oc-muted">
                   <Icon name="cpu" class="size-3.5" />
                   CPU ({server.cpus.length} cores)
                 </span>
-                <span class="font-mono font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+                <span class="font-mono font-semibold tabular-nums text-oc-strong">
                   Avg {avgCpu(server.cpus)}%
                 </span>
               </div>
@@ -188,14 +188,14 @@
                   {@const pct = parsePercent(core.usage)}
                   {@const c = barColors(pct)}
                   <div class="flex items-center gap-2 font-mono text-[11px]">
-                    <span class="w-4 shrink-0 text-right text-gray-400 dark:text-gray-500">{core.id}</span>
-                    <div class="relative flex h-2 flex-1 overflow-hidden rounded-full {c.track}">
+                    <span class="w-4 shrink-0 text-right text-oc-faint">{core.id}</span>
+                    <div class="relative flex h-1.5 flex-1 overflow-hidden rounded-xs {c.track}">
                       <div
-                        class="h-full rounded-full transition-all duration-300 ease-out {c.fill}"
+                        class="h-full rounded-xs transition-all duration-300 ease-out {c.fill}"
                         style="width: {pct}%"
                       ></div>
                     </div>
-                    <span class="w-9 shrink-0 text-right tabular-nums text-gray-700 dark:text-gray-300">
+                    <span class="w-9 shrink-0 text-right tabular-nums text-oc-text">
                       {core.usage}%
                     </span>
                   </div>
@@ -205,22 +205,22 @@
           {/if}
 
           <!-- RAM & Secondary -->
-          <div class="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 dark:border-gray-800/80">
+          <div class="grid grid-cols-2 gap-3 border-t border-oc-border pt-3">
             {#if server.memory}
-              <div class="rounded-md bg-gray-50 p-2.5 dark:bg-gray-900/60">
+              <div class="rounded border border-oc-border bg-oc-subtle p-2.5">
                 <div class="mb-1.5 flex items-center justify-between text-xs">
-                  <span class="font-semibold text-gray-600 dark:text-gray-400">RAM</span>
-                  <span class="font-mono font-semibold tabular-nums text-gray-900 dark:text-gray-50">
+                  <span class="font-mono font-semibold text-oc-muted">RAM</span>
+                  <span class="font-mono font-semibold tabular-nums text-oc-strong">
                     {server.memory.percentage}%
                   </span>
                 </div>
-                <div class="relative flex h-2 w-full overflow-hidden rounded-full {memColor.track}">
+                <div class="relative flex h-1.5 w-full overflow-hidden rounded-xs {memColor.track}">
                   <div
-                    class="h-full rounded-full transition-all duration-300 ease-out {memColor.fill}"
+                    class="h-full rounded-xs transition-all duration-300 ease-out {memColor.fill}"
                     style="width: {memPct}%"
                   ></div>
                 </div>
-                <p class="mt-1.5 font-mono text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 font-mono text-[11px] tabular-nums text-oc-muted">
                   {server.memory.usedGB}G / {server.memory.totalGB}G
                 </p>
               </div>
@@ -229,23 +229,23 @@
             {#if secondary}
               {@const secPct = parsePercent(secondary.data.percentage)}
               {@const secColor = barColors(secPct, secondary.neutral)}
-              <div class="rounded-md bg-gray-50 p-2.5 dark:bg-gray-900/60">
+              <div class="rounded border border-oc-border bg-oc-subtle p-2.5">
                 <div class="mb-1.5 flex items-center justify-between text-xs">
-                  <span class="inline-flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-400">
+                  <span class="inline-flex items-center gap-1 font-mono font-semibold text-oc-muted">
                     <Icon name="drive" class="size-3" />
                     {secondary.label}
                   </span>
-                  <span class="font-mono font-semibold tabular-nums text-gray-900 dark:text-gray-50">
+                  <span class="font-mono font-semibold tabular-nums text-oc-strong">
                     {secondary.data.percentage}%
                   </span>
                 </div>
-                <div class="relative flex h-2 w-full overflow-hidden rounded-full {secColor.track}">
+                <div class="relative flex h-1.5 w-full overflow-hidden rounded-xs {secColor.track}">
                   <div
-                    class="h-full rounded-full transition-all duration-300 ease-out {secColor.fill}"
+                    class="h-full rounded-xs transition-all duration-300 ease-out {secColor.fill}"
                     style="width: {secPct}%"
                   ></div>
                 </div>
-                <p class="mt-1.5 font-mono text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                <p class="mt-1.5 font-mono text-[11px] tabular-nums text-oc-muted">
                   {secondary.data.usedGB}G / {secondary.data.totalGB}G
                 </p>
               </div>
@@ -253,14 +253,14 @@
           </div>
 
           <!-- Footer -->
-          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-2.5 font-mono text-[11px] text-gray-500 dark:border-gray-800/80 dark:text-gray-400">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-oc-border pt-2.5 font-mono text-[11px] text-oc-muted">
             {#if server.network}
               <div class="flex items-center gap-2.5 tabular-nums">
-                <span class="inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
+                <span class="inline-flex items-center gap-0.5 text-oc-strong">
                   <Icon name="arrowDown" class="size-3" />
                   {server.network.down}
                 </span>
-                <span class="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+                <span class="inline-flex items-center gap-0.5 text-[#239f50] dark:text-[#54d483]">
                   <Icon name="arrowUp" class="size-3" />
                   {server.network.up}
                 </span>

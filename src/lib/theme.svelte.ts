@@ -10,7 +10,7 @@ function applyDomTheme(mode: ThemeMode) {
 }
 
 class ThemeController {
-  mode = $state<ThemeMode>("system");
+  mode = $state<ThemeMode>("dark");
 
   init() {
     if (typeof window === "undefined") return;
