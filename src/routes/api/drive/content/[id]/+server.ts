@@ -1,13 +1,12 @@
 import type { RequestHandler } from "./$types";
-import fs from "node:fs";
 import { open } from "node:fs/promises";
-import { Readable } from "node:stream";
 import { isTextPreviewableExt } from "#lib/driveTypes.ts";
 import {
   buildContentDisposition,
   getFileById,
   resolveSafeUploadPath,
 } from "#lib/server/drive.ts";
+import { createFileStreamResponse } from "#lib/server/rangeStream.ts";
 import {
   extractClientIp,
   safePeerIp,
@@ -120,13 +119,12 @@ export const GET: RequestHandler = async ({
       ? buildContentDisposition("inline", file.name)
       : buildContentDisposition("attachment", file.name);
 
-  const nodeStream = fs.createReadStream(resolved.realFilePath);
-  const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
-
-  return new Response(webStream, {
+  return createFileStreamResponse({
+    filePath: resolved.realFilePath,
+    fileSize: resolved.size,
+    rangeHeader: request.headers.get("range"),
     headers: {
       "Content-Type": contentType,
-      "Content-Length": String(resolved.size),
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
       "Content-Disposition": disposition,

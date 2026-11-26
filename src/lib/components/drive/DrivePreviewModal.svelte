@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import Icon from "#lib/components/Icon.svelte";
   import {
     AUDIO_PREVIEW_EXTS,
@@ -51,14 +52,18 @@
     onSessionExpired: () => void;
   } = $props();
 
+  const LARGE_IMAGE_STREAM_THRESHOLD = 25 * 1024 * 1024;
+
   let loading = $state(false);
   let loadError = $state("");
   let blobUrl = $state<string | null>(null);
   let directImageUrl = $state<string | null>(null);
+  let streamMediaUrl = $state<string | null>(null);
   let textContent = $state<string | null>(null);
   let textTruncated = $state(false);
   let showDetails = $state(true);
 
+  let fileIdentity = $derived(file ? `${file.id}:${file.updatedAt}` : null);
   let ext = $derived(file?.ext.toLowerCase() ?? "");
   let isImage = $derived(Boolean(file && IMAGE_PREVIEW_EXTS.has(ext)));
   let isVideo = $derived(Boolean(file && VIDEO_PREVIEW_EXTS.has(ext)));
@@ -66,15 +71,17 @@
   let isText = $derived(Boolean(file && isTextPreviewableExt(ext)));
 
   $effect(() => {
-    const current = file;
+    const identity = fileIdentity;
     const token = sessionToken;
+    const current = untrack(() => file);
 
     loadError = "";
     textContent = null;
     textTruncated = false;
     directImageUrl = null;
+    streamMediaUrl = null;
 
-    if (!current) {
+    if (!identity || !current) {
       if (blobUrl) {
         URL.revokeObjectURL(blobUrl);
         blobUrl = null;
@@ -101,11 +108,49 @@
       };
     }
 
-    if (
-      IMAGE_PREVIEW_EXTS.has(lowerExt) ||
+    const useStreamingTicket =
       VIDEO_PREVIEW_EXTS.has(lowerExt) ||
-      AUDIO_PREVIEW_EXTS.has(lowerExt)
-    ) {
+      AUDIO_PREVIEW_EXTS.has(lowerExt) ||
+      (IMAGE_PREVIEW_EXTS.has(lowerExt) &&
+        current.size > LARGE_IMAGE_STREAM_THRESHOLD);
+
+    if (useStreamingTicket) {
+      loading = true;
+      fetch("/api/drive/ticket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": token,
+        },
+        body: JSON.stringify({ fileId: current.id, purpose: "media" }),
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (res.status === 401) {
+            onSessionExpired();
+            throw new Error("세션이 만료되었습니다.");
+          }
+          const ticketData = (await res.json()) as {
+            url?: string;
+            error?: string;
+          };
+          if (!res.ok || !ticketData.url) {
+            throw new Error(
+              ticketData.error || "미리보기 스트림을 불러올 수 없습니다.",
+            );
+          }
+          if (controller.signal.aborted) return;
+          streamMediaUrl = ticketData.url;
+        })
+        .catch((err) => {
+          if (controller.signal.aborted) return;
+          loadError =
+            err instanceof Error ? err.message : "미리보기에 실패했습니다.";
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) loading = false;
+        });
+    } else if (IMAGE_PREVIEW_EXTS.has(lowerExt)) {
       loading = true;
       fetch(`/api/drive/content/${current.id}`, {
         headers: { "x-session-token": token },
@@ -321,20 +366,20 @@
           <div class="rounded-lg border border-oc-border bg-oc-surface p-6 text-center text-sm text-red-400">
             {loadError}
           </div>
-        {:else if isImage && (directImageUrl || blobUrl)}
+        {:else if isImage && (directImageUrl || streamMediaUrl || blobUrl)}
           <img
-            src={directImageUrl || blobUrl}
+            src={directImageUrl || streamMediaUrl || blobUrl}
             alt={file.name}
             class="max-h-full max-w-full rounded border border-oc-border bg-oc-bg object-contain shadow-2xl"
           />
-        {:else if isVideo && blobUrl}
+        {:else if isVideo && streamMediaUrl}
           <!-- svelte-ignore a11y_media_has_caption -->
           <video
-            src={blobUrl}
+            src={streamMediaUrl}
             controls
             class="max-h-full max-w-full rounded border border-oc-border bg-black shadow-2xl"
           ></video>
-        {:else if isAudio && blobUrl}
+        {:else if isAudio && streamMediaUrl}
           <div class="w-full max-w-md rounded-lg border border-oc-border bg-oc-surface p-6 text-center">
             <div class="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-oc-border bg-oc-subtle text-oc-strong">
               <Icon name="music" class="size-6" />
@@ -342,7 +387,7 @@
             <p class="mb-4 truncate text-sm font-medium text-oc-strong">
               {file.name}
             </p>
-            <audio src={blobUrl} controls class="w-full"></audio>
+            <audio src={streamMediaUrl} controls class="w-full"></audio>
           </div>
         {:else if isText && textContent !== null}
           <div class="flex h-full max-h-[75vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-oc-border bg-oc-surface">

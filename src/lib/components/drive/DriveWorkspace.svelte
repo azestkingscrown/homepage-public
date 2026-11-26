@@ -26,8 +26,10 @@
     name: string;
     size: number;
     relativePath: string;
-    status: "queued" | "uploading" | "done" | "error";
+    status: "queued" | "uploading" | "done" | "error" | "cancelled";
     progress: number;
+    chunkLabel?: string;
+    uploadId?: string;
     error?: string;
     file: File;
     targetFolderId: string | null;
@@ -52,7 +54,9 @@
     createReader: () => DropDirReader;
   }
 
-  const MAX_CLIENT_FILE_SIZE = 95 * 1024 * 1024;
+  const MAX_CLIENT_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+  const CHUNK_UPLOAD_SIZE = 20 * 1024 * 1024; // 20MB (Cloudflare Tunnel 100MB 회피)
+  const MAX_CHUNK_RETRIES = 3;
   const DRAG_MIME_TYPE = "application/x-oc-drive-item";
 
   const VIEW_NAV: { id: DriveView; label: string; icon: IconName }[] = [
@@ -109,6 +113,10 @@
   let uploadQueue = $state<UploadQueueItem[]>([]);
   let uploadPanelExpanded = $state(true);
   let uploadRunnerActive = false;
+  const uploadControllers = new Map<
+    string,
+    { xhr: XMLHttpRequest | null; cancelled: boolean }
+  >();
 
   let isExternalFileDrag = $state(false);
   let dragDepth = 0;
@@ -162,14 +170,15 @@
   });
 
   let uploadStats = $derived.by(() => {
-    const total = uploadQueue.length;
-    const done = uploadQueue.filter((u) => u.status === "done").length;
-    const errors = uploadQueue.filter((u) => u.status === "error").length;
-    const active = uploadQueue.some(
+    const activeItems = uploadQueue.filter((u) => u.status !== "cancelled");
+    const total = activeItems.length;
+    const done = activeItems.filter((u) => u.status === "done").length;
+    const errors = activeItems.filter((u) => u.status === "error").length;
+    const active = activeItems.some(
       (u) => u.status === "queued" || u.status === "uploading",
     );
-    const totalBytes = uploadQueue.reduce((acc, u) => acc + u.size, 0);
-    const loadedBytes = uploadQueue.reduce(
+    const totalBytes = activeItems.reduce((acc, u) => acc + u.size, 0);
+    const loadedBytes = activeItems.reduce(
       (acc, u) =>
         acc + (u.status === "done" ? u.size : Math.round((u.size * u.progress) / 100)),
       0,
@@ -502,26 +511,36 @@
 
   async function downloadFile(file: DriveFileItem) {
     try {
-      const res = await fetch(`/api/drive/content/${file.id}?download=1`, {
-        headers: { "x-session-token": sessionToken },
+      const res = await fetch("/api/drive/ticket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
+        },
+        body: JSON.stringify({ fileId: file.id, purpose: "download" }),
       });
       if (res.status === 401) {
         onSessionExpired();
         return;
       }
-      if (!res.ok) {
-        showToast("다운로드에 실패했습니다.", "error");
+      const ticketData = (await res.json()) as {
+        url?: string;
+        error?: string;
+      };
+      if (!res.ok || !ticketData.url) {
+        showToast(
+          ticketData.error || "다운로드 티켓 발급에 실패했습니다.",
+          "error",
+        );
         return;
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
-      anchor.href = url;
+      anchor.href = ticketData.url;
       anchor.download = file.name;
+      anchor.rel = "noopener";
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5_000);
     } catch {
       showToast("파일 다운로드 중 오류가 발생했습니다.", "error");
     }
@@ -643,7 +662,7 @@
           relativePath,
           status: "error",
           progress: 0,
-          error: "95MB 제한 초과",
+          error: "10GB 제한 초과",
           file,
           targetFolderId: targetFolder,
           shared,
@@ -676,13 +695,60 @@
       };
     });
 
+    for (const item of newItems) {
+      if (item.status === "queued") {
+        uploadControllers.set(item.uid, { xhr: null, cancelled: false });
+      }
+    }
+
     uploadQueue = [...uploadQueue, ...newItems];
     uploadPanelExpanded = true;
     void processUploadQueue();
   }
 
+  function updateQueueItem(uid: string, patch: Partial<UploadQueueItem>) {
+    uploadQueue = uploadQueue.map((q) => (q.uid === uid ? { ...q, ...patch } : q));
+  }
+
+  async function abortServerUploadSession(uploadId: string) {
+    try {
+      await fetch("/api/drive/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
+        },
+        body: JSON.stringify({ action: "abort", uploadId }),
+      });
+    } catch {}
+  }
+
+  function cancelUploadItem(uid: string) {
+    const ctrl = uploadControllers.get(uid);
+    if (ctrl) {
+      ctrl.cancelled = true;
+      ctrl.xhr?.abort();
+      ctrl.xhr = null;
+    }
+    const item = uploadQueue.find((q) => q.uid === uid);
+    if (item?.uploadId) {
+      void abortServerUploadSession(item.uploadId);
+    }
+    updateQueueItem(uid, {
+      status: "cancelled",
+      error: "취소됨",
+      chunkLabel: undefined,
+    });
+  }
+
   function uploadSingleItem(item: UploadQueueItem): Promise<boolean> {
     return new Promise((resolve) => {
+      const ctrl = uploadControllers.get(item.uid);
+      if (ctrl?.cancelled) {
+        resolve(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("file", item.file);
       if (item.targetFolderId) {
@@ -694,25 +760,31 @@
       formData.append("shared", item.shared ? "true" : "false");
 
       const xhr = new XMLHttpRequest();
+      if (ctrl) ctrl.xhr = xhr;
       xhr.open("POST", "/api/upload", true);
       xhr.setRequestHeader("x-session-token", sessionToken);
 
       xhr.upload.onprogress = (ev) => {
-        if (!ev.lengthComputable) return;
+        if (!ev.lengthComputable || ctrl?.cancelled) return;
         const pct = Math.min(100, Math.round((ev.loaded / ev.total) * 100));
-        uploadQueue = uploadQueue.map((q) =>
-          q.uid === item.uid ? { ...q, status: "uploading", progress: pct } : q,
-        );
+        updateQueueItem(item.uid, { status: "uploading", progress: pct });
+      };
+
+      xhr.onabort = () => {
+        if (ctrl) ctrl.xhr = null;
+        updateQueueItem(item.uid, { status: "cancelled", error: "취소됨" });
+        resolve(false);
       };
 
       xhr.onload = () => {
+        if (ctrl) ctrl.xhr = null;
+        if (ctrl?.cancelled) {
+          resolve(false);
+          return;
+        }
         if (xhr.status === 401) {
           onSessionExpired();
-          uploadQueue = uploadQueue.map((q) =>
-            q.uid === item.uid
-              ? { ...q, status: "error", error: "세션 만료" }
-              : q,
-          );
+          updateQueueItem(item.uid, { status: "error", error: "세션 만료" });
           resolve(false);
           return;
         }
@@ -721,43 +793,295 @@
             error?: string;
           };
           if (xhr.status >= 200 && xhr.status < 300) {
-            uploadQueue = uploadQueue.map((q) =>
-              q.uid === item.uid ? { ...q, status: "done", progress: 100 } : q,
-            );
+            updateQueueItem(item.uid, { status: "done", progress: 100 });
             resolve(true);
           } else {
-            uploadQueue = uploadQueue.map((q) =>
-              q.uid === item.uid
-                ? {
-                    ...q,
-                    status: "error",
-                    error: resData.error || "업로드 실패",
-                  }
-                : q,
-            );
+            updateQueueItem(item.uid, {
+              status: "error",
+              error: resData.error || "업로드 실패",
+            });
             resolve(false);
           }
         } catch {
-          uploadQueue = uploadQueue.map((q) =>
-            q.uid === item.uid
-              ? { ...q, status: "error", error: "응답 파싱 오류" }
-              : q,
-          );
+          updateQueueItem(item.uid, {
+            status: "error",
+            error: "응답 파싱 오류",
+          });
           resolve(false);
         }
       };
 
       xhr.onerror = () => {
-        uploadQueue = uploadQueue.map((q) =>
-          q.uid === item.uid
-            ? { ...q, status: "error", error: "네트워크 오류" }
-            : q,
-        );
+        if (ctrl) ctrl.xhr = null;
+        if (!ctrl?.cancelled) {
+          updateQueueItem(item.uid, { status: "error", error: "네트워크 오류" });
+        }
         resolve(false);
       };
 
       xhr.send(formData);
     });
+  }
+
+  function sendChunkXhr(opts: {
+    uid: string;
+    uploadId: string;
+    index: number;
+    blob: Blob;
+    onProgress: (loadedBytes: number) => void;
+  }): Promise<{ ok: boolean; retryable: boolean; status: number; error?: string }> {
+    return new Promise((resolve) => {
+      const ctrl = uploadControllers.get(opts.uid);
+      if (ctrl?.cancelled) {
+        resolve({ ok: false, retryable: false, status: 0, error: "취소됨" });
+        return;
+      }
+
+      const xhr = new XMLHttpRequest();
+      if (ctrl) ctrl.xhr = xhr;
+      xhr.open(
+        "PUT",
+        `/api/drive/upload?uploadId=${encodeURIComponent(opts.uploadId)}&index=${opts.index}`,
+        true,
+      );
+      xhr.setRequestHeader("x-session-token", sessionToken);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+
+      xhr.upload.onprogress = (ev) => {
+        if (!ev.lengthComputable || ctrl?.cancelled) return;
+        opts.onProgress(ev.loaded);
+      };
+
+      xhr.onabort = () => {
+        if (ctrl) ctrl.xhr = null;
+        resolve({ ok: false, retryable: false, status: 0, error: "취소됨" });
+      };
+
+      xhr.onload = () => {
+        if (ctrl) ctrl.xhr = null;
+        if (xhr.status === 401) {
+          resolve({
+            ok: false,
+            retryable: false,
+            status: 401,
+            error: "세션 만료",
+          });
+          return;
+        }
+        let parsed: { error?: string } = {};
+        try {
+          parsed = JSON.parse(xhr.responseText || "{}") as { error?: string };
+        } catch {}
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ ok: true, retryable: false, status: xhr.status });
+        } else {
+          const retryable = xhr.status >= 500 || xhr.status === 429;
+          resolve({
+            ok: false,
+            retryable,
+            status: xhr.status,
+            error: parsed.error || `청크 오류 (${xhr.status})`,
+          });
+        }
+      };
+
+      xhr.onerror = () => {
+        if (ctrl) ctrl.xhr = null;
+        resolve({
+          ok: false,
+          retryable: true,
+          status: 0,
+          error: "네트워크 오류",
+        });
+      };
+
+      xhr.send(opts.blob);
+    });
+  }
+
+  async function uploadChunkedItem(item: UploadQueueItem): Promise<boolean> {
+    const ctrl = uploadControllers.get(item.uid);
+    let uploadId: string | undefined;
+
+    try {
+      const initRes = await fetch("/api/drive/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
+        },
+        body: JSON.stringify({
+          action: "init",
+          fileName: item.name,
+          totalSize: item.size,
+          chunkSize: CHUNK_UPLOAD_SIZE,
+          folderId: item.targetFolderId,
+          relativePath: item.relativePath || undefined,
+          shared: item.shared,
+        }),
+      });
+
+      if (initRes.status === 401) {
+        onSessionExpired();
+        updateQueueItem(item.uid, { status: "error", error: "세션 만료" });
+        return false;
+      }
+
+      const initData = (await initRes.json()) as {
+        uploadId?: string;
+        chunkSize?: number;
+        totalChunks?: number;
+        error?: string;
+      };
+      if (!initRes.ok || !initData.uploadId || !initData.chunkSize || !initData.totalChunks) {
+        updateQueueItem(item.uid, {
+          status: "error",
+          error: initData.error || "업로드 초기화 실패",
+        });
+        return false;
+      }
+
+      uploadId = initData.uploadId;
+      const chunkSize = initData.chunkSize;
+      const totalChunks = initData.totalChunks;
+
+      updateQueueItem(item.uid, {
+        uploadId,
+        status: "uploading",
+        progress: 0,
+        chunkLabel: `0/${totalChunks} 청크`,
+      });
+
+      for (let idx = 0; idx < totalChunks; idx += 1) {
+        if (ctrl?.cancelled || destroyed) {
+          await abortServerUploadSession(uploadId);
+          updateQueueItem(item.uid, {
+            status: "cancelled",
+            error: "취소됨",
+            chunkLabel: undefined,
+          });
+          return false;
+        }
+
+        const start = idx * chunkSize;
+        const end = Math.min(item.size, start + chunkSize);
+        const sliceBlob = item.file.slice(start, end);
+
+        let chunkOk = false;
+        let lastError = "청크 전송 실패";
+
+        for (let attempt = 0; attempt <= MAX_CHUNK_RETRIES; attempt += 1) {
+          if (ctrl?.cancelled || destroyed) break;
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 800 * Math.pow(2, attempt - 1)));
+          }
+
+          const chunkRes = await sendChunkXhr({
+            uid: item.uid,
+            uploadId,
+            index: idx,
+            blob: sliceBlob,
+            onProgress: (loadedBytes) => {
+              const overall = Math.min(
+                99,
+                Math.round(((start + loadedBytes) / item.size) * 100),
+              );
+              updateQueueItem(item.uid, {
+                progress: overall,
+                chunkLabel: `${idx + 1}/${totalChunks} 청크`,
+              });
+            },
+          });
+
+          if (chunkRes.ok) {
+            chunkOk = true;
+            break;
+          }
+          if (chunkRes.status === 401) {
+            onSessionExpired();
+            await abortServerUploadSession(uploadId);
+            updateQueueItem(item.uid, {
+              status: "error",
+              error: "세션 만료",
+              chunkLabel: undefined,
+            });
+            return false;
+          }
+          lastError = chunkRes.error || lastError;
+          if (!chunkRes.retryable) break;
+        }
+
+        if (!chunkOk) {
+          await abortServerUploadSession(uploadId);
+          if (ctrl?.cancelled) {
+            updateQueueItem(item.uid, {
+              status: "cancelled",
+              error: "취소됨",
+              chunkLabel: undefined,
+            });
+          } else {
+            updateQueueItem(item.uid, {
+              status: "error",
+              error: lastError,
+              chunkLabel: undefined,
+            });
+          }
+          return false;
+        }
+      }
+
+      if (ctrl?.cancelled || destroyed) {
+        await abortServerUploadSession(uploadId);
+        updateQueueItem(item.uid, {
+          status: "cancelled",
+          error: "취소됨",
+          chunkLabel: undefined,
+        });
+        return false;
+      }
+
+      const completeRes = await fetch("/api/drive/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
+        },
+        body: JSON.stringify({ action: "complete", uploadId }),
+      });
+
+      if (completeRes.status === 401) {
+        onSessionExpired();
+        updateQueueItem(item.uid, { status: "error", error: "세션 만료" });
+        return false;
+      }
+
+      const completeData = (await completeRes.json()) as { error?: string };
+      if (!completeRes.ok) {
+        await abortServerUploadSession(uploadId);
+        updateQueueItem(item.uid, {
+          status: "error",
+          error: completeData.error || "파일 조립 실패",
+          chunkLabel: undefined,
+        });
+        return false;
+      }
+
+      updateQueueItem(item.uid, {
+        status: "done",
+        progress: 100,
+        chunkLabel: undefined,
+      });
+      return true;
+    } catch {
+      if (uploadId) await abortServerUploadSession(uploadId);
+      updateQueueItem(item.uid, {
+        status: "error",
+        error: "분할 업로드 오류",
+        chunkLabel: undefined,
+      });
+      return false;
+    }
   }
 
   async function processUploadQueue() {
@@ -768,10 +1092,12 @@
       while (!destroyed) {
         const nextItem = uploadQueue.find((q) => q.status === "queued");
         if (!nextItem) break;
-        uploadQueue = uploadQueue.map((q) =>
-          q.uid === nextItem.uid ? { ...q, status: "uploading" } : q,
-        );
-        const ok = await uploadSingleItem(nextItem);
+        updateQueueItem(nextItem.uid, { status: "uploading" });
+        const ok =
+          nextItem.size > CHUNK_UPLOAD_SIZE
+            ? await uploadChunkedItem(nextItem)
+            : await uploadSingleItem(nextItem);
+        uploadControllers.delete(nextItem.uid);
         if (ok) uploadedAny = true;
       }
       if (uploadedAny) {
@@ -1062,6 +1388,11 @@
 
   onDestroy(() => {
     destroyed = true;
+    for (const ctrl of uploadControllers.values()) {
+      ctrl.cancelled = true;
+      ctrl.xhr?.abort();
+    }
+    uploadControllers.clear();
     if (toastTimer) clearTimeout(toastTimer);
     if (searchTimer) clearTimeout(searchTimer);
     for (const url of Object.values(thumbUrls)) {
@@ -1105,7 +1436,7 @@
           여기에 파일 또는 폴더를 놓아 업로드
         </p>
         <p class="mt-1 text-xs text-oc-muted">
-          폴더를 놓으면 하위 구조가 그대로 생성됩니다 (파일당 최대 95MB)
+          폴더를 놓으면 하위 구조가 그대로 생성됩니다 (대용량 자동 분할 업로드 · 최대 10GB)
         </p>
       </div>
     </div>
@@ -2338,17 +2669,32 @@
               <span class="truncate font-medium text-oc-strong">
                 {item.name}
               </span>
-              <span class="shrink-0 font-mono text-[10px]">
+              <div class="flex shrink-0 items-center gap-1.5 font-mono text-[10px]">
                 {#if item.status === "done"}
                   <span class="text-[#54d483]">완료</span>
+                {:else if item.status === "cancelled"}
+                  <span class="text-oc-faint">취소됨</span>
                 {:else if item.status === "error"}
                   <span class="text-red-400">{item.error || "오류"}</span>
                 {:else if item.status === "uploading"}
-                  <span class="text-oc-strong">{item.progress}%</span>
+                  <span class="text-oc-strong">
+                    {item.chunkLabel ? `${item.chunkLabel} · ${item.progress}%` : `${item.progress}%`}
+                  </span>
                 {:else}
                   <span class="text-oc-faint">대기</span>
                 {/if}
-              </span>
+                {#if item.status === "queued" || item.status === "uploading"}
+                  <button
+                    type="button"
+                    onclick={() => cancelUploadItem(item.uid)}
+                    aria-label={`${item.name} 업로드 취소`}
+                    title="업로드 취소"
+                    class="cursor-pointer rounded p-0.5 text-oc-faint hover:bg-oc-hover hover:text-oc-strong"
+                  >
+                    <Icon name="close" class="size-3" />
+                  </button>
+                {/if}
+              </div>
             </div>
             {#if item.status === "uploading"}
               <svg

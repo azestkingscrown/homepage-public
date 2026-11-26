@@ -1,13 +1,12 @@
 import type { RequestHandler } from "./$types";
-import fs from "node:fs";
 import path from "node:path";
-import { Readable } from "node:stream";
 import {
   buildContentDisposition,
   getPublicFileAccess,
   isSafeStorageName,
   resolveSafeUploadPath,
 } from "#lib/server/drive.ts";
+import { createFileStreamResponse } from "#lib/server/rangeStream.ts";
 
 const SAFE_IMAGE_CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
@@ -17,7 +16,7 @@ const SAFE_IMAGE_CONTENT_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 };
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, request }) => {
   const filename = params.filename;
 
   if (!isSafeStorageName(filename)) {
@@ -45,13 +44,13 @@ export const GET: RequestHandler = async ({ params }) => {
     const disposition = imageMime
       ? "inline"
       : buildContentDisposition("attachment", access.displayName || filename);
-    const nodeStream = fs.createReadStream(resolved.realFilePath);
-    const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
-    return new Response(webStream, {
+    return createFileStreamResponse({
+      filePath: resolved.realFilePath,
+      fileSize: resolved.size,
+      rangeHeader: request.headers.get("range"),
       headers: {
         "Content-Type": contentType,
-        "Content-Length": String(resolved.size),
         "Cache-Control": "public, max-age=60, must-revalidate",
         "X-Content-Type-Options": "nosniff",
         "Content-Disposition": disposition,
