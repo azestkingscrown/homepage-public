@@ -110,7 +110,11 @@ export function encodeRfc3986(str: string): string {
 
 /** Read and validate Cloudflare R2 configuration from environment variables. */
 export function getR2Config(): R2Config | null {
-  const accountId = (process.env.R2_ACCOUNT_ID || "").trim();
+  const rawAccountId = (process.env.R2_ACCOUNT_ID || "").trim();
+  const endpointMatch = rawAccountId.match(
+    /^https:\/\/([a-f0-9]{16,64})\.r2\.cloudflarestorage\.com(?:\/.*)?$/i,
+  );
+  const accountId = endpointMatch ? endpointMatch[1] : rawAccountId;
   const accessKeyId = (process.env.R2_ACCESS_KEY_ID || "").trim();
   const secretAccessKey = (process.env.R2_SECRET_ACCESS_KEY || "").trim();
   const bucketName = (process.env.R2_BUCKET_NAME || "").trim();
