@@ -1,6 +1,7 @@
 import type { RequestHandler } from "./$types";
 import { lstat, realpath, unlink } from "node:fs/promises";
 import path from "node:path";
+import { removeFileRecordByStorageName } from "#lib/server/drive.ts";
 import {
   extractClientIp,
   safePeerIp,
@@ -57,6 +58,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     }
 
     await unlink(realFilePath);
+    await removeFileRecordByStorageName(path.basename(filename));
     console.log(`[Delete] File removed: ${path.basename(filename)}`);
 
     return Response.json({ success: true });

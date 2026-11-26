@@ -43,7 +43,7 @@ export default defineConfig({
             "https://api.lanyard.rest",
             "wss://api.lanyard.rest",
           ],
-          "media-src": ["self"],
+          "media-src": ["self", "blob:"],
           "manifest-src": ["self"],
           "worker-src": ["self", "blob:"],
           "frame-src": ["self"],

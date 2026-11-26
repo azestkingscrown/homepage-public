@@ -34,7 +34,7 @@
   >([
     { name: t.nav.ddns, href: CORE_NAV_PATHS.ddns, icon: "globe", tag: "Auth" },
     { name: t.nav.minecraft, href: CORE_NAV_PATHS.minecraft, icon: "gamepad", tag: "Auth" },
-    { name: t.nav.hosting, href: CORE_NAV_PATHS.hosting, icon: "upload", tag: "OTP" },
+    { name: t.nav.hosting, href: CORE_NAV_PATHS.hosting, icon: "drive", tag: "OTP" },
     { name: t.nav.admin, href: CORE_NAV_PATHS.admin, icon: "admin", tag: "OTP" },
   ]);
 

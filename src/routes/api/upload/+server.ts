@@ -1,9 +1,16 @@
 import type { RequestHandler } from "./$types";
+import crypto from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import {
+  DriveError,
+  ensureFolderPath,
+  registerUploadedFile,
+  validateDisplayName,
+} from "#lib/server/drive.ts";
 import {
   extractClientIp,
   safePeerIp,
@@ -145,7 +152,42 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
       }
     }
 
-    const fileName = `${Date.now()}-${safeName}`;
+    const fileName = `${Date.now()}-${crypto.randomBytes(2).toString("hex")}-${safeName}`;
+
+    const rawFolderId = formData.get("folderId");
+    const baseFolderId =
+      typeof rawFolderId === "string" && rawFolderId.trim().length > 0
+        ? rawFolderId.trim()
+        : null;
+
+    const rawRelativePath = formData.get("relativePath");
+    let targetFolderId = baseFolderId;
+    if (typeof rawRelativePath === "string" && rawRelativePath.trim().length > 0) {
+      if (rawRelativePath.includes("\0")) {
+        return Response.json({ error: "잘못된 폴더 경로입니다." }, { status: 400 });
+      }
+      const segments = rawRelativePath
+        .replace(/\\/g, "/")
+        .split("/")
+        .filter(Boolean);
+      if (segments.some((s) => s === "." || s === "..")) {
+        return Response.json({ error: "잘못된 폴더 경로입니다." }, { status: 400 });
+      }
+      const dirSegments = segments.slice(0, -1);
+      if (dirSegments.length > 0) {
+        targetFolderId = await ensureFolderPath(baseFolderId, dirSegments);
+      }
+    }
+
+    const rawShared = formData.get("shared");
+    const isShared = rawShared === "false" ? false : true;
+
+    let displayName = safeName;
+    try {
+      displayName = validateDisplayName(path.basename(file.name));
+    } catch {
+      displayName = safeName;
+    }
 
     const uploadsDir = path.resolve(process.cwd(), "public", "uploads");
     const filePath = path.resolve(uploadsDir, fileName);
@@ -162,14 +204,27 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     const fileStream = createWriteStream(filePath);
     await pipeline(nodeStream, fileStream);
 
+    const driveFile = await registerUploadedFile({
+      storageName: fileName,
+      displayName,
+      size: file.size,
+      ext: finalExt,
+      folderId: targetFolderId,
+      shared: isShared,
+    });
+
     console.log(`[Upload] File saved: ${fileName} (${file.size} bytes)`);
 
     return Response.json({
       success: true,
       url: `/uploads/${fileName}`,
       name: fileName,
+      file: driveFile,
     });
   } catch (error) {
+    if (error instanceof DriveError) {
+      return Response.json({ error: error.message }, { status: error.status });
+    }
     console.error("Upload error:", error);
     return Response.json({ error: "서버 업로드 실패" }, { status: 500 });
   }

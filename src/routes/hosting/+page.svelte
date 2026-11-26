@@ -1,6 +1,6 @@
 <script lang="ts">
+  import DriveWorkspace from "#lib/components/drive/DriveWorkspace.svelte";
   import Icon from "#lib/components/Icon.svelte";
-  import ImageHosting from "#lib/components/ImageHosting.svelte";
   import TripleOtpForm from "#lib/components/TripleOtpForm.svelte";
 
   let otpTokens = $state<[string, string, string]>(["", "", ""]);
@@ -63,7 +63,7 @@
 </script>
 
 <svelte:head>
-  <title>Private File Hosting | Azest_Kingscrown</title>
+  <title>Private Drive & Hosting | Azest_Kingscrown</title>
 </svelte:head>
 
 <div class="space-y-6">
@@ -80,11 +80,11 @@
         {/if}
       </div>
       <h1 class="mt-2 flex items-center gap-2 text-2xl font-bold tracking-tight text-oc-strong">
-        <Icon name="upload" class="size-6 text-oc-strong" />
-        Private File Hosting
+        <Icon name="drive" class="size-6 text-oc-strong" />
+        Private Drive &amp; Hosting
       </h1>
       <p class="mt-1 text-sm text-oc-muted">
-        외부에 노출되지 않는 관리자 전용 파일 업로드 및 URL 호스팅 공간입니다.
+        폴더 관리, 미리보기, 공개 링크 공유를 지원하는 관리자 전용 클라우드 드라이브입니다.
       </p>
     </div>
 
@@ -122,6 +122,6 @@
       onSubmit={handleLogin}
     />
   {:else}
-    <ImageHosting {sessionToken} />
+    <DriveWorkspace {sessionToken} onSessionExpired={handleLogout} />
   {/if}
 </div>

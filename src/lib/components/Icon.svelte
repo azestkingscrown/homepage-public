@@ -52,7 +52,28 @@
     | "terminal"
     | "history"
     | "sparkles"
-    | "loader";
+    | "loader"
+    | "folder"
+    | "folderOpen"
+    | "folderPlus"
+    | "search"
+    | "grid"
+    | "list"
+    | "star"
+    | "starFilled"
+    | "download"
+    | "link"
+    | "chevronRight"
+    | "image"
+    | "video"
+    | "music"
+    | "archive"
+    | "fileText"
+    | "restore"
+    | "move"
+    | "info"
+    | "uploadFolder"
+    | "checkSquare";
 
   let { name, class: className = "size-4" }: { name: IconName; class?: string } =
     $props();
@@ -175,5 +196,47 @@
     <path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z" /><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
   {:else if name === "loader"}
     <path d="M12 3a9 9 0 1 0 9 9" />
+  {:else if name === "folder"}
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+  {:else if name === "folderOpen"}
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1H7l-3 9H3V7Z" /><path d="M5 19h14l2-9H8Z" />
+  {:else if name === "folderPlus"}
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /><path d="M12 10.5v5M9.5 13h5" />
+  {:else if name === "search"}
+    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+  {:else if name === "grid"}
+    <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+  {:else if name === "list"}
+    <path d="M8 6h13M8 12h13M8 18h13" /><circle cx="4" cy="6" r="0.8" fill="currentColor" /><circle cx="4" cy="12" r="0.8" fill="currentColor" /><circle cx="4" cy="18" r="0.8" fill="currentColor" />
+  {:else if name === "star"}
+    <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.2 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3Z" />
+  {:else if name === "starFilled"}
+    <path fill="currentColor" stroke="none" d="m12 2.4 3.05 6.18 6.82.99-4.93 4.8 1.16 6.79L12 17.95l-6.1 3.21 1.16-6.79-4.93-4.8 6.82-.99L12 2.4Z" />
+  {:else if name === "download"}
+    <path d="M12 4v11" /><path d="m7.5 10.5 4.5 4.5 4.5-4.5" /><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+  {:else if name === "link"}
+    <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" />
+  {:else if name === "chevronRight"}
+    <path d="m9 6 6 6-6 6" />
+  {:else if name === "image"}
+    <rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m21 15-5-5L6 20" />
+  {:else if name === "video"}
+    <rect x="2" y="5" width="14" height="14" rx="2" /><path d="m16 10 6-3.5v11L16 14Z" />
+  {:else if name === "music"}
+    <path d="M9 18V6l11-2v12" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="16" r="2.5" />
+  {:else if name === "archive"}
+    <rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" /><path d="M10 12h4" />
+  {:else if name === "fileText"}
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" />
+  {:else if name === "restore"}
+    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
+  {:else if name === "move"}
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /><path d="M9.5 13h5M12.5 10.5 15 13l-2.5 2.5" />
+  {:else if name === "info"}
+    <circle cx="12" cy="12" r="9" /><path d="M12 16v-4" /><circle cx="12" cy="8.2" r="0.8" fill="currentColor" />
+  {:else if name === "uploadFolder"}
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /><path d="M12 16v-5m-2.5 2.5L12 11l2.5 2.5" />
+  {:else if name === "checkSquare"}
+    <rect x="3" y="3" width="18" height="18" rx="3" /><path d="m8 12.5 2.8 2.8L16.5 9.5" />
   {/if}
 </svg>
