@@ -1683,17 +1683,23 @@
         </div>
 
         <div class="flex items-center gap-1.5">
-          <select
-            aria-label="정렬 기준"
-            value={sortField}
-            onchange={(e) =>
-              setSort((e.currentTarget as HTMLSelectElement).value as DriveSortField)}
-            class="cursor-pointer rounded border border-oc-border bg-oc-bg px-2.5 py-1.5 text-xs text-oc-strong focus:border-oc-border-strong focus:outline-none"
-          >
-            <option value="updated">수정일순</option>
-            <option value="name">이름순</option>
-            <option value="size">크기순</option>
-          </select>
+          <div class="relative">
+            <select
+              aria-label="정렬 기준"
+              value={sortField}
+              onchange={(e) =>
+                setSort((e.currentTarget as HTMLSelectElement).value as DriveSortField)}
+              class="cursor-pointer appearance-none rounded border border-oc-border bg-oc-bg py-1.5 pl-2.5 pr-8 text-xs text-oc-strong focus:border-oc-border-strong focus:outline-none"
+            >
+              <option value="updated">수정일순</option>
+              <option value="name">이름순</option>
+              <option value="size">크기순</option>
+            </select>
+            <Icon
+              name="chevronDown"
+              class="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-oc-muted"
+            />
+          </div>
 
           <button
             type="button"

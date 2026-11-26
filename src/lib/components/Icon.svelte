@@ -64,6 +64,7 @@
     | "download"
     | "link"
     | "chevronRight"
+    | "chevronDown"
     | "image"
     | "video"
     | "music"
@@ -218,6 +219,8 @@
     <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" />
   {:else if name === "chevronRight"}
     <path d="m9 6 6 6-6 6" />
+  {:else if name === "chevronDown"}
+    <path d="m6 9 6 6 6-6" />
   {:else if name === "image"}
     <rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m21 15-5-5L6 20" />
   {:else if name === "video"}

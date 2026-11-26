@@ -709,7 +709,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <div class="min-w-[240px] flex-1 overflow-x-auto whitespace-nowrap rounded border border-oc-border bg-oc-bg px-3.5 py-2 font-mono text-xs">
+        <div class="min-w-0 basis-full overflow-x-auto whitespace-nowrap rounded border border-oc-border bg-oc-bg px-3.5 py-2 font-mono text-xs sm:flex-1 sm:basis-auto">
           <span class={showTokenValue ? "text-oc-strong" : "tracking-widest text-oc-faint"}>
             {showTokenValue
               ? authToken || "토큰 없음"
@@ -793,7 +793,7 @@
         onRemoveUser={(id, name) => void handleRemoveWhitelistUser(id, name)}
       />
     {:else}
-      <div class="space-y-6">
+      <div class="min-w-0 space-y-6">
         <!-- Client IP Banner -->
         <div class="flex flex-wrap items-center justify-between gap-4 rounded-md border border-oc-border bg-oc-surface p-5">
           <div>
@@ -884,7 +884,7 @@
 
         <!-- One-click Manual Update -->
         {#if displayDomains.length > 0}
-          <div class="space-y-4 rounded-md border border-oc-border bg-oc-surface p-6">
+          <div class="min-w-0 space-y-4 rounded-md border border-oc-border bg-oc-surface p-4 sm:p-6">
             <div>
               <h2 class="text-base font-semibold text-oc-strong">
                 현재 접속 기기 IP로 원클릭 갱신
@@ -895,23 +895,30 @@
             </div>
 
             <div class="flex flex-col gap-2.5 sm:flex-row">
-              <select
-                bind:value={selectedDomain}
-                class="flex-1 rounded border border-oc-border bg-oc-bg px-3 py-2 font-mono text-sm text-oc-strong outline-none focus:border-oc-strong"
-              >
-                {#each displayDomains as d (d.domain)}
-                  <option value={d.domain}>
-                    {d.label
-                      ? `[${d.label}] ${maskDomain(d.domain, maskSensitive)}`
-                      : maskDomain(d.domain, maskSensitive)}
-                  </option>
-                {/each}
-              </select>
+              <div class="relative min-w-0 flex-1">
+                <select
+                  aria-label="갱신할 도메인 선택"
+                  bind:value={selectedDomain}
+                  class="w-full min-w-0 cursor-pointer appearance-none truncate rounded border border-oc-border bg-oc-bg py-2 pl-3 pr-9 font-mono text-sm text-oc-strong outline-none focus:border-oc-strong"
+                >
+                  {#each displayDomains as d (d.domain)}
+                    <option value={d.domain}>
+                      {d.label
+                        ? `[${d.label}] ${maskDomain(d.domain, maskSensitive)}`
+                        : maskDomain(d.domain, maskSensitive)}
+                    </option>
+                  {/each}
+                </select>
+                <Icon
+                  name="chevronDown"
+                  class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-oc-muted"
+                />
+              </div>
               <button
                 type="button"
                 onclick={handleManualUpdate}
                 disabled={isUpdating}
-                class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded bg-oc-strong px-4 py-2 text-sm font-medium text-oc-inverted transition hover:bg-oc-strong-hover disabled:opacity-50"
+                class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded bg-oc-strong px-4 py-2 text-sm font-medium text-oc-inverted transition hover:bg-oc-strong-hover disabled:opacity-50"
               >
                 <Icon name="refresh" class="size-4" />
                 {isUpdating ? "갱신 중..." : "현재 접속 IP로 지금 갱신"}
@@ -1038,16 +1045,22 @@
           {#if ddnsData.isAdmin && adminData?.whitelist}
             <div>
               <label for="ddns-new-owner" class="mb-1.5 block text-xs font-semibold text-oc-text">기기 소유자 지정 (관리자 권한)</label>
-              <select
-                id="ddns-new-owner"
-                bind:value={targetOwnerId}
-                class="block w-full rounded border border-oc-border bg-oc-bg px-3 py-2 text-sm text-oc-strong outline-none focus:border-oc-strong"
-              >
-                <option value={ddnsData.user?.id || ""}>나 ({ddnsData.user?.name} - 관리자)</option>
-                {#each adminData.whitelist.filter((w) => w.id !== ddnsData?.user?.id) as w (w.id)}
-                  <option value={w.id}>{w.name} ({w.id})</option>
-                {/each}
-              </select>
+              <div class="relative">
+                <select
+                  id="ddns-new-owner"
+                  bind:value={targetOwnerId}
+                  class="block w-full cursor-pointer appearance-none truncate rounded border border-oc-border bg-oc-bg py-2 pl-3 pr-9 text-sm text-oc-strong outline-none focus:border-oc-strong"
+                >
+                  <option value={ddnsData.user?.id || ""}>나 ({ddnsData.user?.name} - 관리자)</option>
+                  {#each adminData.whitelist.filter((w) => w.id !== ddnsData?.user?.id) as w (w.id)}
+                    <option value={w.id}>{w.name} ({w.id})</option>
+                  {/each}
+                </select>
+                <Icon
+                  name="chevronDown"
+                  class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-oc-muted"
+                />
+              </div>
             </div>
           {/if}
 

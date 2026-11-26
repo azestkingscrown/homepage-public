@@ -59,9 +59,9 @@
 </script>
 
 {#if domains.length > 0 && activeItem}
-  <div id="setup-guide-section" class="space-y-4 rounded-md border border-oc-border bg-oc-surface p-6">
+  <div id="setup-guide-section" class="min-w-0 space-y-4 rounded-md border border-oc-border bg-oc-surface p-4 sm:p-6">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+      <div class="min-w-0">
         <h2 class="text-base font-semibold text-oc-strong">
           기기별 자동 갱신 설정 가이드
         </h2>
@@ -70,27 +70,39 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-2">
-        <span class="shrink-0 text-xs font-medium text-oc-muted">대상 기기:</span>
-        <select
-          value={activeDomain}
-          onchange={(e) => onChangeGuideDomain(e.currentTarget.value)}
-          class="rounded border border-oc-border bg-oc-bg px-3 py-1.5 font-mono text-xs text-oc-strong outline-none focus:border-oc-strong"
+      <div class="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+        <label
+          for="ddns-guide-device"
+          class="shrink-0 text-xs font-medium text-oc-muted"
         >
-          {#each domains as d (d.domain)}
-            {@const osText = getDeviceOs(d) === "windows" ? "Windows" : "Linux"}
-            <option value={d.domain}>
-              {d.label
-                ? `${d.label} [${osText}] (${maskDomain(d.domain, maskSensitive)})`
-                : `${maskDomain(d.domain, maskSensitive)} [${osText}]`}
-            </option>
-          {/each}
-        </select>
+          대상 기기:
+        </label>
+        <div class="relative w-full min-w-0 sm:w-72 md:w-80">
+          <select
+            id="ddns-guide-device"
+            value={activeDomain}
+            onchange={(e) => onChangeGuideDomain(e.currentTarget.value)}
+            class="w-full min-w-0 cursor-pointer appearance-none truncate rounded border border-oc-border bg-oc-bg py-2 pl-3 pr-9 font-mono text-xs text-oc-strong outline-none focus:border-oc-strong"
+          >
+            {#each domains as d (d.domain)}
+              {@const osText = getDeviceOs(d) === "windows" ? "Windows" : "Linux"}
+              <option value={d.domain}>
+                {d.label
+                  ? `${d.label} [${osText}] (${maskDomain(d.domain, maskSensitive)})`
+                  : `${maskDomain(d.domain, maskSensitive)} [${osText}]`}
+              </option>
+            {/each}
+          </select>
+          <Icon
+            name="chevronDown"
+            class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-oc-muted"
+          />
+        </div>
       </div>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3 rounded border border-oc-border bg-oc-subtle px-4 py-3">
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex min-w-0 flex-wrap items-center gap-2">
         <span
           class={isWindows
             ? "rounded border border-oc-border-strong bg-oc-surface px-2 py-0.5 font-mono text-xs font-semibold text-oc-strong"
@@ -99,7 +111,7 @@
           {isWindows ? "Windows 전용" : "Linux 전용"}
         </span>
         <span class="text-sm font-semibold text-oc-strong">{activeLabel}</span>
-        <span class="font-mono text-xs text-oc-muted">{displayDomain}</span>
+        <span class="break-all font-mono text-xs text-oc-muted">{displayDomain}</span>
       </div>
 
       {#if isOwner}
@@ -136,7 +148,7 @@
           : "Linux 터미널을 열고 아래 명령어를 실행하면 PM2가 10분마다 백그라운드 자동 갱신합니다."}
       </p>
 
-      <div class="rounded border border-oc-border bg-[#0c0c0c] p-4">
+      <div class="min-w-0 overflow-hidden rounded border border-oc-border bg-[#0c0c0c] p-4">
         <div class="mb-2 flex justify-end">
           <button
             type="button"
