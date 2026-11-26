@@ -104,6 +104,7 @@ export const translations = {
       btnGuide: "치지직 봇 가이드",
       btnUpdate: "업데이트 내역",
       btnBoy: "혀엉..",
+      btnGgLang: "줴줴이야",
       minecraftPanel: "Minecraft 제어 패널 →",
       contactTitle: "완전 익명 문의 시스템",
       contactDesc:
@@ -255,6 +256,7 @@ export const translations = {
       btnGuide: "Chzzk Bot Guide",
       btnUpdate: "Changelog",
       btnBoy: "Hyeong..",
+      btnGgLang: "Jjwejjeiya",
       minecraftPanel: "Minecraft Control Panel →",
       contactTitle: "Fully Anonymous Ticket System",
       contactDesc:

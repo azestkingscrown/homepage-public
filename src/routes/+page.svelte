@@ -78,6 +78,15 @@
           {t.btnBoy}
           <Icon name="external" class="size-3.5 text-oc-faint" />
         </a>
+        <a
+          href={EXTERNAL_LINKS.ggLang}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 rounded border border-oc-border bg-oc-subtle px-3.5 py-2 text-sm font-medium text-oc-text transition hover:bg-oc-hover hover:text-oc-strong"
+        >
+          {t.btnGgLang}
+          <Icon name="external" class="size-3.5 text-oc-faint" />
+        </a>
       </div>
     </div>
 

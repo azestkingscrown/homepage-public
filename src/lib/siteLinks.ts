@@ -19,6 +19,7 @@ export const EXTERNAL_LINKS = {
   github: "https://github.com/your-github-username",
   discordContact: "https://discord.gg/your-invite-code",
   boySite: "https://sub.example.com/",
+  ggLang: "https://your-github-username.github.io/gg-lang/",
   kakaopay: "https://example.com/support-kr",
   kofi: "https://ko-fi.com/your-handle",
   botInvite: "https://discord.com/discovery/applications/YOUR_BOT_APP_ID",
