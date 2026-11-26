@@ -50,6 +50,8 @@ const RATE_LIMIT_RULES: RateLimitRule[] = [
   { prefix: "/api/proxy-image", max: 120, windowMs: 60_000 },
   { prefix: "/api/status", max: 600, windowMs: 60_000 },
   { prefix: "/api/server", max: 20, windowMs: 60_000 },
+  { prefix: "/api/r2/upload", max: 600, windowMs: 60_000 },
+  { prefix: "/api/r2", max: 180, windowMs: 60_000 },
   { prefix: "/api/drive/upload", max: 600, windowMs: 60_000 },
   { prefix: "/api/drive/stream", max: 600, windowMs: 60_000 },
   { prefix: "/api/drive/ticket", max: 120, windowMs: 60_000 },

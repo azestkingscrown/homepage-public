@@ -1,5 +1,6 @@
 <script lang="ts">
   import DriveWorkspace from "#lib/components/drive/DriveWorkspace.svelte";
+  import R2Workspace from "#lib/components/drive/R2Workspace.svelte";
   import Icon from "#lib/components/Icon.svelte";
   import TripleOtpForm from "#lib/components/TripleOtpForm.svelte";
 
@@ -8,6 +9,25 @@
   let isAuthenticated = $state(false);
   let loginLoading = $state(false);
   let authError = $state("");
+
+  let activeStorage = $state<"local" | "r2">("local");
+  let r2Configured = $state(false);
+  let r2PublicUrl = $state<string | null>(null);
+
+  async function loadR2Status(token: string) {
+    try {
+      const res = await fetch("/api/r2?statusOnly=1", {
+        headers: { "x-session-token": token },
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        configured?: boolean;
+        publicUrl?: string | null;
+      };
+      r2Configured = Boolean(data.configured);
+      r2PublicUrl = data.publicUrl ?? null;
+    } catch {}
+  }
 
   async function handleLogin() {
     if (otpTokens.some((code) => code.length !== 6)) return;
@@ -39,6 +59,7 @@
       sessionToken = data.token;
       isAuthenticated = true;
       otpTokens = ["", "", ""];
+      void loadR2Status(data.token);
     } catch {
       authError = "서버 연결에 실패했습니다.";
     } finally {
@@ -58,6 +79,9 @@
     }
     sessionToken = "";
     isAuthenticated = false;
+    activeStorage = "local";
+    r2Configured = false;
+    r2PublicUrl = null;
     otpTokens = ["", "", ""];
   }
 </script>
@@ -84,7 +108,7 @@
         Private Drive &amp; Hosting
       </h1>
       <p class="mt-1 text-sm text-oc-muted">
-        폴더 관리, 미리보기, 공개 링크 공유를 지원하는 관리자 전용 클라우드 드라이브입니다.
+        로컬 개인 드라이브와 Cloudflare R2 공개 CDN을 분리해 관리할 수 있습니다.
       </p>
     </div>
 
@@ -122,6 +146,51 @@
       onSubmit={handleLogin}
     />
   {:else}
-    <DriveWorkspace {sessionToken} onSessionExpired={handleLogout} />
+    <!-- Dual Storage Switcher -->
+    <div class="flex flex-wrap items-center gap-2 rounded-lg border border-oc-border bg-oc-surface p-1.5">
+      <button
+        type="button"
+        onclick={() => (activeStorage = "local")}
+        class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition sm:flex-none {activeStorage === 'local'
+          ? 'bg-oc-strong text-oc-inverted'
+          : 'text-oc-muted hover:bg-oc-subtle hover:text-oc-strong'}"
+      >
+        <Icon name="server" class="size-4" />
+        <span>로컬 드라이브 (Oracle Disk)</span>
+        <span class="rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] opacity-80">
+          최대 10GB
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onclick={() => (activeStorage = "r2")}
+        class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition sm:flex-none {activeStorage === 'r2'
+          ? 'bg-oc-strong text-oc-inverted'
+          : 'text-oc-muted hover:bg-oc-subtle hover:text-oc-strong'}"
+      >
+        <Icon name="globe" class="size-4" />
+        <span>R2 CDN (Cloudflare)</span>
+        {#if r2Configured && r2PublicUrl}
+          <span class="hidden rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] opacity-85 sm:inline">
+            {r2PublicUrl.replace("https://", "")}
+          </span>
+        {:else}
+          <span class="rounded border border-current/25 px-1.5 py-0.5 font-mono text-[10px] opacity-70">
+            미설정
+          </span>
+        {/if}
+      </button>
+    </div>
+
+    {#if activeStorage === "local"}
+      <DriveWorkspace
+        {sessionToken}
+        {r2Configured}
+        onSessionExpired={handleLogout}
+      />
+    {:else}
+      <R2Workspace {sessionToken} onSessionExpired={handleLogout} />
+    {/if}
   {/if}
 </div>

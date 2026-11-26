@@ -87,6 +87,41 @@ export interface DriveListResponse {
   stats: DriveStorageStats;
 }
 
+export interface R2FolderItem {
+  prefix: string;
+  name: string;
+}
+
+export interface R2FileItem {
+  key: string;
+  name: string;
+  size: number;
+  ext: string;
+  mime: string;
+  category: DriveFileCategory;
+  lastModified: string;
+  url: string;
+  folderLabel?: string;
+}
+
+export interface R2StorageStats {
+  usedBytes: number;
+  hardCapBytes: number;
+  freeTierBytes: number;
+  objectCount: number;
+  bucketName: string;
+  publicUrl: string;
+}
+
+export interface R2ListResponse {
+  configured: boolean;
+  prefix: string;
+  breadcrumbs: { prefix: string; name: string }[];
+  folders: R2FolderItem[];
+  files: R2FileItem[];
+  stats: R2StorageStats | null;
+}
+
 export const IMAGE_PREVIEW_EXTS = new Set([
   ".png",
   ".jpg",

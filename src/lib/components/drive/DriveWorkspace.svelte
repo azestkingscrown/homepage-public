@@ -79,9 +79,13 @@
 
   let {
     sessionToken,
+    r2Configured = false,
+    onCopiedToR2,
     onSessionExpired,
   }: {
     sessionToken: string;
+    r2Configured?: boolean;
+    onCopiedToR2?: () => void;
     onSessionExpired: () => void;
   } = $props();
 
@@ -646,6 +650,52 @@
       `${items.length}개 항목을 복원했습니다.`,
     );
     if (ok) selectedMap = {};
+  }
+
+  async function copyFilesToR2(fileIds: string[]) {
+    if (!r2Configured || fileIds.length === 0 || actionBusy) return;
+    actionBusy = true;
+    showToast("R2 CDN으로 파일을 복제하는 중...", "info");
+    try {
+      const res = await fetch("/api/r2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-token": sessionToken,
+        },
+        body: JSON.stringify({ action: "copyFromLocal", fileIds }),
+      });
+      if (res.status === 401) {
+        onSessionExpired();
+        return;
+      }
+      const result = (await res.json()) as {
+        copied?: { url: string; name: string }[];
+        error?: string;
+      };
+      if (!res.ok || !result.copied) {
+        showToast(result.error || "R2 복제에 실패했습니다.", "error");
+        return;
+      }
+      if (result.copied.length === 1) {
+        try {
+          await navigator.clipboard.writeText(result.copied[0].url);
+          showToast("R2 CDN 복제 및 URL 복사 완료", "ok");
+        } catch {
+          showToast("R2 CDN으로 복제되었습니다.", "ok");
+        }
+      } else {
+        showToast(
+          `${result.copied.length}개 파일을 R2 CDN으로 복제했습니다.`,
+          "ok",
+        );
+      }
+      onCopiedToR2?.();
+    } catch {
+      showToast("R2 복제 중 오류가 발생했습니다.", "error");
+    } finally {
+      actionBusy = false;
+    }
   }
 
   // Upload queue & drag/drop directory traversal
@@ -1866,6 +1916,23 @@
               <Icon name="move" class="size-3.5" />
               이동
             </button>
+            {#if r2Configured && selectedItems.some((i) => i.kind === "file")}
+              <button
+                type="button"
+                disabled={actionBusy}
+                onclick={() =>
+                  copyFilesToR2(
+                    selectedItems
+                      .filter((i) => i.kind === "file")
+                      .map((i) => i.id)
+                      .slice(0, 20),
+                  )}
+                class="inline-flex cursor-pointer items-center gap-1.5 rounded border border-[#54d483]/40 bg-[#54d483]/10 px-2.5 py-1 text-xs font-medium text-[#239f50] transition hover:bg-[#54d483]/20 dark:text-[#54d483]"
+              >
+                <Icon name="globe" class="size-3.5" />
+                R2 배포
+              </button>
+            {/if}
             <button
               type="button"
               disabled={actionBusy}
@@ -2239,6 +2306,17 @@
                         </button>
 
                         <div class="flex items-center gap-0.5">
+                          {#if r2Configured}
+                            <button
+                              type="button"
+                              onclick={() => copyFilesToR2([file.id])}
+                              title="R2 CDN으로 복제"
+                              aria-label="R2 CDN 복제"
+                              class="cursor-pointer rounded p-1 text-oc-muted hover:bg-[#54d483]/15 hover:text-[#239f50] dark:hover:text-[#54d483]"
+                            >
+                              <Icon name="globe" class="size-3.5" />
+                            </button>
+                          {/if}
                           <button
                             type="button"
                             onclick={() => downloadFile(file)}
@@ -2556,6 +2634,16 @@
                       >
                         <Icon name="copy" class="size-3.5" />
                       </button>
+                      {#if r2Configured}
+                        <button
+                          type="button"
+                          onclick={() => copyFilesToR2([file.id])}
+                          title="R2 CDN으로 복제"
+                          class="cursor-pointer rounded p-1 text-oc-muted hover:bg-[#54d483]/15 hover:text-[#239f50] dark:hover:text-[#54d483]"
+                        >
+                          <Icon name="globe" class="size-3.5" />
+                        </button>
+                      {/if}
                       <button
                         type="button"
                         onclick={() => downloadFile(file)}
@@ -2740,6 +2828,7 @@
 <DrivePreviewModal
   file={previewFile}
   {sessionToken}
+  {r2Configured}
   hasPrev={previewIndex > 0}
   hasNext={previewIndex >= 0 && previewIndex < files.length - 1}
   onClose={() => (previewFile = null)}
@@ -2755,6 +2844,7 @@
   onCopyLink={copyPublicUrl}
   onCopyMarkdown={copyMarkdownLink}
   onDownload={downloadFile}
+  onCopyToR2={(f) => void copyFilesToR2([f.id])}
   onToggleStar={(f) => handleToggleStar([{ kind: "file", id: f.id }])}
   onRename={(f) =>
     (actionModal = {

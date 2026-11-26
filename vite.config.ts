@@ -4,6 +4,15 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
+const r2CdnOrigin = (() => {
+  try {
+    const raw = (process.env.R2_PUBLIC_URL || "").trim();
+    return raw ? new URL(raw).origin : null;
+  } catch {
+    return null;
+  }
+})();
+
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -32,6 +41,7 @@ export default defineConfig({
             "self",
             "data:",
             "blob:",
+            ...(r2CdnOrigin ? [r2CdnOrigin] : []),
             "https://cdn.discordapp.com",
             "https://i.scdn.co",
             "https://images.unsplash.com",
@@ -43,7 +53,11 @@ export default defineConfig({
             "https://api.lanyard.rest",
             "wss://api.lanyard.rest",
           ],
-          "media-src": ["self", "blob:"],
+          "media-src": [
+            "self",
+            "blob:",
+            ...(r2CdnOrigin ? [r2CdnOrigin] : []),
+          ],
           "manifest-src": ["self"],
           "worker-src": ["self", "blob:"],
           "frame-src": ["self"],

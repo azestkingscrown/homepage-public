@@ -17,6 +17,7 @@
     sessionToken,
     hasPrev = false,
     hasNext = false,
+    r2Configured = false,
     onClose,
     onPrev,
     onNext,
@@ -24,6 +25,7 @@
     onCopyLink,
     onCopyMarkdown,
     onDownload,
+    onCopyToR2,
     onToggleStar,
     onRename,
     onMove,
@@ -36,6 +38,7 @@
     sessionToken: string;
     hasPrev?: boolean;
     hasNext?: boolean;
+    r2Configured?: boolean;
     onClose: () => void;
     onPrev: () => void;
     onNext: () => void;
@@ -43,6 +46,7 @@
     onCopyLink: (file: DriveFileItem) => void;
     onCopyMarkdown: (file: DriveFileItem) => void;
     onDownload: (file: DriveFileItem) => void;
+    onCopyToR2?: (file: DriveFileItem) => void;
     onToggleStar: (file: DriveFileItem) => void;
     onRename: (file: DriveFileItem) => void;
     onMove: (file: DriveFileItem) => void;
@@ -484,6 +488,16 @@
 
           {#if !file.trashedAt}
             <div class="mt-5 space-y-1.5 border-t border-oc-border pt-4">
+              {#if r2Configured && onCopyToR2}
+                <button
+                  type="button"
+                  onclick={() => onCopyToR2(file)}
+                  class="flex w-full cursor-pointer items-center gap-2 rounded border border-[#54d483]/40 bg-[#54d483]/10 px-3 py-1.5 text-xs font-medium text-[#239f50] transition hover:bg-[#54d483]/20 dark:text-[#54d483]"
+                >
+                  <Icon name="globe" class="size-3.5" />
+                  R2 CDN으로 복제
+                </button>
+              {/if}
               {#if file.shared}
                 <button
                   type="button"
