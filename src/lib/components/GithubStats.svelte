@@ -29,7 +29,7 @@
     <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
       <div class="flex items-center justify-center rounded border border-oc-border bg-[#161616] p-3">
         <img
-          src={proxyUrl(`https://github-readme-stats-fast.vercel.app/api?username=${GITHUB_USERNAME}&show_icons=true&bg_color=161616&title_color=fafafa&text_color=aeaeae&icon_color=dbdbdb&hide_border=true`)}
+          src="/api/github-stats?theme=dark&hide_border=true"
           alt="GitHub Stats"
           class="no-lightbox max-h-44 w-auto max-w-full"
           referrerpolicy="no-referrer"
@@ -37,7 +37,7 @@
       </div>
       <div class="flex items-center justify-center rounded border border-oc-border bg-[#161616] p-3">
         <img
-          src={proxyUrl(`https://github-readme-stats-fast.vercel.app/api/top-langs/?username=${GITHUB_USERNAME}&layout=compact&bg_color=161616&title_color=fafafa&text_color=aeaeae&icon_color=dbdbdb&hide_border=true`)}
+          src="/api/github-top-langs?theme=dark&hide_border=true"
           alt="Top Languages"
           class="no-lightbox max-h-44 w-auto max-w-full"
           referrerpolicy="no-referrer"

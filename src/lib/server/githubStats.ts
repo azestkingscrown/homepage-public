@@ -24,6 +24,27 @@ interface CacheEntry {
 
 const statsCache = new Map<string, CacheEntry>();
 
+export interface GitHubLanguageItem {
+  name: string;
+  color: string;
+  size: number;
+  percentage: number;
+}
+
+export interface GitHubTopLangsData {
+  username: string;
+  languages: GitHubLanguageItem[];
+  totalSize: number;
+  fetchedAt: number;
+}
+
+interface TopLangsCacheEntry {
+  data: GitHubTopLangsData;
+  updatedAt: number;
+}
+
+const topLangsCache = new Map<string, TopLangsCacheEntry>();
+
 function exponentialCdf(x: number): number {
   return 1 - Math.pow(2, -x);
 }
@@ -262,6 +283,168 @@ export async function getGitHubStats(usernameOverride?: string): Promise<GitHubS
     return data;
   } catch (err) {
     console.error("Failed to fetch GitHub stats:", err);
+    if (cached) return cached.data;
+    throw err;
+  }
+}
+
+const TOP_LANGS_QUERY = `
+query userTopLangs($login: String!, $after: String) {
+  user(login: $login) {
+    login
+    repositories(
+      first: 100
+      ownerAffiliations: OWNER
+      isFork: false
+      after: $after
+    ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        languages(first: 10, orderBy: { field: SIZE, direction: DESC }) {
+          edges {
+            size
+            node {
+              name
+              color
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+interface GraphQLLangsUserNode {
+  login?: string;
+  repositories?: {
+    pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+    nodes?: Array<{
+      languages?: {
+        edges?: Array<{
+          size?: number;
+          node?: { name?: string; color?: string | null } | null;
+        } | null>;
+      } | null;
+    } | null>;
+  };
+}
+
+async function fetchTopLangsPage(
+  token: string,
+  username: string,
+  after: string | null,
+): Promise<GraphQLLangsUserNode> {
+  const res = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "User-Agent": "homepage-public/1.0",
+    },
+    body: JSON.stringify({
+      query: TOP_LANGS_QUERY,
+      variables: { login: username, after },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`GitHub GraphQL HTTP ${res.status}`);
+  }
+
+  const json = (await res.json()) as {
+    data?: { user?: GraphQLLangsUserNode | null };
+    errors?: Array<{ message?: string }>;
+  };
+
+  if (json.errors?.length) {
+    throw new Error(json.errors.map((e) => e.message).join("; "));
+  }
+  if (!json.data?.user) {
+    throw new Error(`GitHub user not found: ${username}`);
+  }
+  return json.data.user;
+}
+
+/**
+ * Aggregate language byte sizes across all owned non-fork repositories
+ * (including private repos) with short-TTL cache and stale fallback.
+ */
+export async function getGitHubTopLangs(
+  langsCount = 6,
+  usernameOverride?: string,
+): Promise<GitHubTopLangsData> {
+  const username =
+    usernameOverride?.trim() ||
+    process.env.GITHUB_USERNAME?.trim() ||
+    DEFAULT_GITHUB_USERNAME;
+  const count = Math.min(10, Math.max(1, Math.trunc(langsCount)));
+  const cacheKey = `${username}:${count}`;
+  const cached = topLangsCache.get(cacheKey);
+  const now = Date.now();
+
+  if (cached && now - cached.updatedAt < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const token = process.env.GITHUB_TOKEN?.trim();
+  if (!token) {
+    if (cached) return cached.data;
+    throw new Error("GITHUB_TOKEN is not configured");
+  }
+
+  try {
+    const totals = new Map<string, { size: number; color: string }>();
+    let after: string | null = null;
+    let resolvedLogin = username;
+
+    for (let page = 0; page < 3; page++) {
+      const user = await fetchTopLangsPage(token, username, after);
+      if (user.login) resolvedLogin = user.login;
+
+      for (const repo of user.repositories?.nodes ?? []) {
+        for (const edge of repo?.languages?.edges ?? []) {
+          const name = edge?.node?.name;
+          const size = edge?.size ?? 0;
+          if (!name || size <= 0) continue;
+          const color = edge?.node?.color || "#858585";
+          const prev = totals.get(name);
+          totals.set(name, { size: (prev?.size ?? 0) + size, color });
+        }
+      }
+
+      const pageInfo = user.repositories?.pageInfo;
+      if (!pageInfo?.hasNextPage || !pageInfo.endCursor) break;
+      after = pageInfo.endCursor;
+    }
+
+    const topSorted = Array.from(totals.entries())
+      .sort((a, b) => b[1].size - a[1].size)
+      .slice(0, count);
+    const totalSize = topSorted.reduce((sum, [, v]) => sum + v.size, 0);
+
+    const languages: GitHubLanguageItem[] = topSorted.map(([name, info]) => ({
+      name,
+      color: info.color,
+      size: info.size,
+      percentage: totalSize > 0 ? (info.size / totalSize) * 100 : 0,
+    }));
+
+    const data: GitHubTopLangsData = {
+      username: resolvedLogin,
+      languages,
+      totalSize,
+      fetchedAt: now,
+    };
+
+    topLangsCache.set(cacheKey, { data, updatedAt: now });
+    return data;
+  } catch (err) {
+    console.error("Failed to fetch GitHub top languages:", err);
     if (cached) return cached.data;
     throw err;
   }
